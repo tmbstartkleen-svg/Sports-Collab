@@ -1,0 +1,37 @@
+{
+  "timezone": "America/New_York",
+  "source": "Verified existing ChatGPT automations on 2026-11-11",
+  "appExecutionEnabled": false,
+  "schedules": [
+    {
+      "id": "silent-sports-research-prep",
+      "title": "Silent Sports Research Prep",
+      "time": "19:00",
+      "frequency": "daily",
+      "sourceAutomationId": "Automation_729c0377960c8191a7f83cca0433f593",
+      "sourceEnabled": true,
+      "appPullsApproved": false,
+      "notifyOnCompletion": false
+    },
+    {
+      "id": "daily-pro-sports-slips",
+      "title": "Daily Pro Sports Slips",
+      "time": "23:00",
+      "frequency": "daily",
+      "sourceAutomationId": "Automation_f2f49aeeeec48191abcdb1db02c1714b",
+      "sourceEnabled": true,
+      "appPullsApproved": false,
+      "notifyOnCompletion": true
+    },
+    {
+      "id": "daily-edgeforce-sims",
+      "title": "Daily EdgeForce Sims",
+      "time": "23:00",
+      "frequency": "daily",
+      "sourceAutomationId": "6af45a2737d88191b402bb61d0187188",
+      "sourceEnabled": true,
+      "appPullsApproved": false,
+      "notifyOnCompletion": true
+    }
+  ]
+}
