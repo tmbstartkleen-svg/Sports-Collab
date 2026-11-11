@@ -1,0 +1,13 @@
+{
+  "name": "sports-collab-edge-desk",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server.mjs --preview",
+    "start": "node server.mjs",
+    "test": "node --test test/*.test.mjs",
+    "check": "node --check server.mjs && node --check lib/edge.mjs && node --check lib/unabated.mjs && node --check public/app.mjs"
+  },
+  "engines": { "node": ">=22" }
+}
