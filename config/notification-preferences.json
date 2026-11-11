@@ -1,0 +1,19 @@
+{
+  "inApp": true,
+  "iphonePush": true,
+  "deliveryActive": false,
+  "pushPermissionGranted": false,
+  "notificationEvents": [
+    "completed",
+    "failed",
+    "blocked",
+    "quota_exhausted"
+  ],
+  "silentScheduleIds": [
+    "silent-sports-research-prep"
+  ],
+  "monthlySpendLimitUsd": 0,
+  "liveApiCallsEnabled": false,
+  "backgroundPolling": false,
+  "automaticRetries": false
+}
