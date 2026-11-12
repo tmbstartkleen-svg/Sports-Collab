@@ -10,7 +10,8 @@ test('mobile inline script parses as JavaScript',()=>{
 });
 test('all direct DOM id lookups have matching elements',()=>{
  const ids=[...script.matchAll(/\$\('([a-zA-Z][\w-]*)'\)/g)].map(m=>m[1]);
- const missing=[...new Set(ids)].filter(id=>!new RegExp('\\bid=["\\\']'+id+'["\\\']').test(html));
+ const declared=new Set([...html.matchAll(/id="([a-zA-Z][\w-]*)"/g)].map(m=>m[1]));
+ const missing=[...new Set(ids)].filter(id=>!declared.has(id));
  assert.deepEqual(missing,[]);
 });
 test('council remains read-only and shows clear disclaimers',()=>{
