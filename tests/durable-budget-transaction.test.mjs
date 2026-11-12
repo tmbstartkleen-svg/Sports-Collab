@@ -38,3 +38,12 @@ test('transaction rolls back and rejects database errors',async()=>{
  assert.ok(state.queries.includes('ROLLBACK'));
  assert.equal(state.released,1);
 });
+
+test('month key must match real YYYY-MM format',async()=>{
+ const {pool,state}=fakePool();
+ const valid=makeDurableBudgetAdapter({pool,enabled:true,monthKey:'2026-11'});
+ assert.equal((await valid.reserveAtomic({requestId:'valid-month',estimatedUsd:0.01})).reserved,true);
+ const bad=makeDurableBudgetAdapter({pool,enabled:true,monthKey:'2026-13'});
+ assert.equal((await bad.reserveAtomic({requestId:'invalid-month',estimatedUsd:0.01})).reserved,false);
+ assert.equal(state.reserved,1);
+});
