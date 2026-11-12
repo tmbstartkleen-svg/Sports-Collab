@@ -47,3 +47,16 @@ test('month key must match real YYYY-MM format',async()=>{
  assert.equal((await bad.reserveAtomic({requestId:'invalid-month',estimatedUsd:0.01})).reserved,false);
  assert.equal(state.reserved,1);
 });
+
+test('exact one cent is not rounded up to two',async()=>{
+ const {pool,state}=fakePool({limit:1});
+ const adapter=makeDurableBudgetAdapter({pool,enabled:true,monthKey:'2026-11'});
+ assert.equal((await adapter.reserveAtomic({requestId:'cent',estimatedUsd:0.01})).reserved,true);
+ assert.equal(state.reserved,1);
+});
+test('zero budget rejects any positive request',async()=>{
+ const {pool,state}=fakePool({limit:0});
+ const adapter=makeDurableBudgetAdapter({pool,enabled:true,monthKey:'2026-11'});
+ assert.equal((await adapter.reserveAtomic({requestId:'zero',estimatedUsd:0.01})).reserved,false);
+ assert.equal(state.reserved,0);
+});
