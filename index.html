@@ -156,7 +156,7 @@ $('runOfflineCouncil').onclick=async()=>{
  const response=await fetch('/api/council-run-offline',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:$('q').value,responses:{openai:$('o').value,gemini:$('g').value,llama:$('m').value}})});
  const data=await response.json();
  if(!response.ok||!data.ok){out.textContent=data.error||'Council unavailable';return}
- out.textContent='COMPLETE OFFLINE COUNCIL\\n3/3 responses accepted\\nAI network calls: NONE\\nVerified facts: '+data.review.verifiedFacts+'\\n\\n'+data.review.entries.map(e=>e.provider.toUpperCase()+': '+e.claimCount+' candidate statements').join('\\n')+'\\n\\n'+data.review.warning+'\\nNo bet approved.';
+ out.textContent='COMPLETE OFFLINE COUNCIL\\n3/3 responses accepted\\nAI network calls: NONE\\nVerified facts: '+data.review.verifiedFacts+'\\n\\n'+data.review.entries.map(e=>e.provider.toUpperCase()+': '+e.claimCount+' candidate statements').join('\\n')+'\\n\\n'+data.review.warning+'\\n\\nATTRIBUTED MARKET EXCERPTS\\n'+data.synthesis.marketClaims.map(x=>x.provider.toUpperCase()+': '+x.excerpt).join('\\n')+'\\n\\nINJURY/ROSTER EXCERPTS\\n'+data.synthesis.evidenceCandidates.map(x=>x.provider.toUpperCase()+': '+x.excerpt).join('\\n')+'\\n\\nUNRESOLVED RISKS\\n'+data.synthesis.uncertainties.map(x=>x.provider.toUpperCase()+': '+x.excerpt).join('\\n')+'\\nNo bet approved.';
  }catch{out.textContent='Offline council endpoint unavailable.';}
 };
 </script></body></html>
