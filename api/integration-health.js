@@ -1,3 +1,7 @@
+import {providerReadiness} from '../lib/provider-readiness.js';
+import {AUTH_ENABLED} from '../lib/auth-policy.js';
+import {SESSION_ISSUANCE_ENABLED} from '../lib/owner-session.js';
+import {evaluatePasskeyActivation} from '../lib/passkey-activation.js';
 import {buildCouncilPrompts,runCouncilOffline} from '../lib/council-orchestrator.js';
 import {synthesizeCouncil} from '../lib/council-synthesis.js';
 import {validateQuotaConfiguration} from '../lib/usage-quota.js';
@@ -16,5 +20,16 @@ export default async function handler(req,res){
   checks.liveTransportDisabled=(await executeProvider({authorization:{ownerVerified:true,explicitProviderApproval:true,enforcedBudgetAvailable:true}})).ok===false;
  }catch{checks.internalError=true}
  const ok=Object.values(checks).every(v=>v===true);
- return res.status(ok?200:503).json({ok,checks,mode:'offline-integration-health',providerCallsMade:0,monthlySpendLimitUsd:0});
+ const providers=providerReadiness(process.env);
+ const launchGates={
+   offlineCouncil:ok,
+   ownerAuthentication:AUTH_ENABLED&&SESSION_ISSUANCE_ENABLED,
+   passkeyAuthentication:evaluatePasskeyActivation({}).ready,
+   providerConnections:Object.values(providers).every(p=>p.readyForActivation&&p.requestsEnabled),
+   durableSpendingControls:false,
+   mobileAcceptanceVerified:false,
+   productionApproved:false
+ };
+ const launchReady=Object.values(launchGates).every(Boolean);
+ return res.status(ok?200:503).json({ok,checks,mode:'offline-integration-health',providerCallsMade:0,monthlySpendLimitUsd:0,launchReady,launchGates,blockedLaunchGates:Object.entries(launchGates).filter(([,v])=>!v).map(([k])=>k)});
 }
