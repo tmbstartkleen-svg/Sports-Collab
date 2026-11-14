@@ -13,3 +13,15 @@ test('owner assertion transaction remains hard-disabled',async()=>{
  assert.deepEqual(result,{ok:false,reason:'Owner assertion transaction disabled'});
  assert.equal(calls,0);
 });
+
+test('configured owner cannot be substituted by request identity while disabled',async()=>{
+ let calls=0;
+ const credentialStore={getOwnerCredential:async()=>{calls++;throw Error('must not read')}};
+ const result=await completeOwnerAssertion({
+  ownerId:'attacker',configuredOwnerId:'owner',credentialId:'credential',
+  response:{id:'credential'},challenge:'test-challenge',
+  credentialStore
+ });
+ assert.equal(result.ok,false);
+ assert.equal(calls,0);
+});
