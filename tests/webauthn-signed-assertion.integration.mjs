@@ -1,10 +1,37 @@
 import assert from 'node:assert/strict';
 import {createHash, generateKeyPairSync, sign} from 'node:crypto';
 import {verifyAuthenticationResponse} from '@simplewebauthn/server';
+import {makePasskeyChallengeStore} from '../lib/passkey-challenge-store.js';
+import {makePasskeyCredentialStore} from '../lib/passkey-credential-store.js';
 
 // Synthetic, local P-256 credential: no user enrollment, network calls, or sessions.
 const origin='https://example.com', rpID='example.com';
-const challenge=Buffer.from('offline-signed-challenge').toString('base64url');
+// In-memory SQL emulator exercises the actual store methods without a database.
+const challenges=new Map();
+let storedCounter=1;
+const pool={async query(sql,args){
+ if(sql.startsWith('INSERT INTO passkey_auth.challenges')){
+  challenges.set(args[0],{owner:args[1],purpose:args[2],used:false});return {rowCount:1};
+ }
+ if(sql.startsWith('UPDATE passkey_auth.challenges')){
+  const row=challenges.get(args[0]);
+  if(!row||row.used||row.owner!==args[1]||row.purpose!==args[2])return {rowCount:0};
+  row.used=true;return {rowCount:1};
+ }
+ if(sql.startsWith('SELECT credential_id,owner_id')){
+  return {rows:[{credential_id:credentialID,owner_id:'owner',public_key:Buffer.from(credential.publicKey),sign_count:storedCounter,transports:['internal']}]};
+ }
+ if(sql.startsWith('UPDATE passkey_auth.credentials SET sign_count=')){
+  if(args[0]!==credentialID||args[1]!=='owner'||args[2]!==storedCounter)return {rowCount:0};
+  storedCounter=args[3];return {rowCount:1};
+ }
+ throw Error('Unexpected offline SQL');
+}};
+const challengeStore=makePasskeyChallengeStore({pool,enabled:true});
+const credentialStore=makePasskeyCredentialStore({pool,enabled:true});
+const issued=await challengeStore.issue({ownerId:'owner',purpose:'authentication'});
+assert.equal(issued.ok,true);
+const challenge=issued.challenge;
 const credentialID=Buffer.from('offline-test-credential').toString('base64url');
 const {publicKey,privateKey}=generateKeyPairSync('ec',{namedCurve:'prime256v1'});
 const jwk=publicKey.export({format:'jwk'});
@@ -51,4 +78,23 @@ const noUPResponse=structuredClone(response);
 noUPResponse.response.authenticatorData=noUPData.toString('base64url');
 noUPResponse.response.signature=sign('sha256',Buffer.concat([noUPData,createHash('sha256').update(clientDataJSON).digest()]),privateKey).toString('base64url');
 await assert.rejects(()=>verifyAuthenticationResponse({...args,response:noUPResponse}),'Correct signature without user presence must fail');
-console.log('Signed WebAuthn assertion positive and negative checks passed');
+// Complete offline verification rehearsal: owner-scoped lookup, one-time challenge,
+// genuine signature verification, and atomic counter update. Not a live login.
+const stored=await credentialStore.getOwnerCredential({ownerId:'owner',credentialId:credentialID});
+assert.equal(stored.owner_id,'owner');
+assert.equal(await challengeStore.consumeAuthentication({ownerId:'owner',challenge}),true);
+const verified=await verifyAuthenticationResponse({...args,credential:{
+ id:stored.credential_id,publicKey:new Uint8Array(stored.public_key),
+ counter:Number(stored.sign_count),transports:stored.transports
+}});
+assert.equal(verified.verified,true);
+assert.equal(await credentialStore.recordVerifiedAssertion({
+ credentialId:credentialID,ownerId:'owner',previousSignCount:1,
+ nextSignCount:verified.authenticationInfo.newCounter
+}),true);
+assert.equal(storedCounter,2);
+assert.equal(await challengeStore.consumeAuthentication({ownerId:'owner',challenge}),false);
+assert.equal(await credentialStore.recordVerifiedAssertion({
+ credentialId:credentialID,ownerId:'owner',previousSignCount:1,nextSignCount:2
+}),false);
+console.log('Signed WebAuthn assertion and owner-scoped store integration checks passed');
