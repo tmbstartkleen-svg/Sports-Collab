@@ -41,6 +41,11 @@ create index if not exists passkey_session_expiry on passkey_auth.sessions (expi
 
 -- Prevent anonymous or ordinary signed-in clients from accessing tables.
 revoke all on all tables in schema passkey_auth from public, anon, authenticated;
+-- Restrict future tables and sequences as well; migrations must run as the
+-- intended schema owner, not a broadly privileged client role.
+alter default privileges in schema passkey_auth revoke all on tables from public, anon, authenticated;
+alter default privileges in schema passkey_auth revoke all on sequences from public, anon, authenticated;
+revoke all on all sequences in schema passkey_auth from public, anon, authenticated;
 -- Application server should use a narrowly scoped PostgreSQL role,
 -- not an exposed service-role key in the browser.
 ),
