@@ -39,3 +39,9 @@ test('small-screen iPhone layout has accessible focus and touch targets',()=>{
  assert.match(html,/:focus-visible/);
  assert.match(html,/font-size:16px/);
 });
+
+test('restoring saved research reopens the mobile council without contacting providers',()=>{
+ assert.match(html,/if\(\$\('chatQuestion'\)\.value\.trim\(\)\)\$\('chatAsk'\)\.click\(\)/);
+ assert.match(html,/chatText\('chatPromptPanel'\)\.hidden=false/);
+ assert.match(html,/chatText\('chatReplies'\)\.hidden=false/);
+});
