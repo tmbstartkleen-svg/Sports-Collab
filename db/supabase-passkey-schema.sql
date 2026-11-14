@@ -15,6 +15,8 @@ create table if not exists passkey_auth.credentials (
   revoked_at timestamptz
 );
 
+create index if not exists passkey_credentials_owner_idx on passkey_auth.credentials (owner_id) where revoked_at is null;
+
 create table if not exists passkey_auth.challenges (
   challenge_hash text primary key,
   owner_id text not null,
