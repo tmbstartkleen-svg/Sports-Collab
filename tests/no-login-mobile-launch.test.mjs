@@ -56,3 +56,8 @@ test('council briefs and demo use real line breaks, not literal slash-n sequence
  }
  assert.match(html,/white-space:pre-wrap/,'briefs preserve line breaks');
 });
+
+test('editing the research question invalidates the previous council report',()=>{
+ assert.match(html,/chatText\('chatQuestion'\)\.addEventListener\('input'/);
+ assert.match(html,/Question changed\. Build a new council review/);
+});
