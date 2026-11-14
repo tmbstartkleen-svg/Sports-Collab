@@ -11,7 +11,8 @@ create table if not exists passkey_auth.credentials (
   sign_count bigint not null default 0 check (sign_count >= 0),
   transports text[] not null default '{}',
   created_at timestamptz not null default now(),
-  last_used_at timestamptz
+  last_used_at timestamptz,
+  revoked_at timestamptz
 );
 
 create table if not exists passkey_auth.challenges (
