@@ -31,3 +31,11 @@ test('verified session can be created, validated, and revoked with hashed token 
  assert.ok(seen.every(({args})=>!args.includes(created.token)));
  assert.match(OWNER_SESSION_SCHEMA_SQL,/token_hash CHAR\(64\) PRIMARY KEY/);
 });
+
+test('invalid session clock fails closed before querying database',async()=>{
+ let calls=0;
+ const store=makeOwnerSessionStore({enabled:true,clock:()=>NaN,pool:{query:async()=>{calls++}}});
+ const result=await store.createVerifiedSession({verifiedOwnerId:'owner',credentialId:'credential'});
+ assert.equal(result.ok,false);
+ assert.equal(calls,0);
+});
