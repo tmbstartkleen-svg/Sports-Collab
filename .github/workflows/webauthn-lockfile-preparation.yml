@@ -6,6 +6,7 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'tests/webauthn-signed-assertion.integration.mjs'
+      - 'tests/webauthn-registration-cryptographic.integration.mjs'
       - '.github/workflows/webauthn-lockfile-preparation.yml'
 permissions:
   contents: read
@@ -39,6 +40,8 @@ jobs:
           NODE
       - name: Verify locally signed WebAuthn assertion and tampering rejection
         run: node tests/webauthn-signed-assertion.integration.mjs
+      - name: Verify genuine offline WebAuthn registration and rejection cases
+        run: node tests/webauthn-registration-cryptographic.integration.mjs
       - name: Run offline unit tests
         run: npm test
       - name: Assert dependency lockfile remains unchanged
