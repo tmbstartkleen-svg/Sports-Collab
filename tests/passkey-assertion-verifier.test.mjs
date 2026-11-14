@@ -34,3 +34,23 @@ test('malformed assertion data fails closed',()=>{
  assert.equal(verifyPasskeyAssertion({}).ok,false);
  assert.equal(verifyPasskeyAssertion({...assertion(),clientDataJSON:Buffer.from('{bad')}).ok,false);
 });
+
+test('attested-credential and extension flags are rejected even with valid signatures',()=>{
+ for(const flag of [0x40,0x80]){
+  const assertion=assertionWithFlag(flag);
+  assert.equal(verifyPasskeyAssertion(assertion).ok,false);
+ }
+});
+function assertionWithFlag(extraFlag){
+ const original=assertion();
+ const authenticatorData=Buffer.from(original.authenticatorData);
+ authenticatorData[32]|=extraFlag;
+ const signed=Buffer.concat([authenticatorData,createHash('sha256').update(original.clientDataJSON).digest()]);
+ return {...original,authenticatorData,signature:sign('sha256',signed,privateKey)};
+}
+test('unexpected authenticator-data trailing bytes are rejected',()=>{
+ const original=assertion();
+ const authenticatorData=Buffer.concat([original.authenticatorData,Buffer.from([0])]);
+ const signed=Buffer.concat([authenticatorData,createHash('sha256').update(original.clientDataJSON).digest()]);
+ assert.equal(verifyPasskeyAssertion({...original,authenticatorData,signature:sign('sha256',signed,privateKey)}).ok,false);
+});
