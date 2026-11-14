@@ -38,4 +38,17 @@ await assert.rejects(()=>verifyAuthenticationResponse({...args,response:altered}
 await assert.rejects(()=>verifyAuthenticationResponse({...args,expectedOrigin:'https://other.example.com'}),'Wrong origin must fail');
 await assert.rejects(()=>verifyAuthenticationResponse({...args,expectedChallenge:Buffer.from('wrong').toString('base64url')}),'Wrong challenge must fail');
 await assert.rejects(()=>verifyAuthenticationResponse({...args,credential:{...credential,counter:2}}),'Replayed counter must fail');
+await assert.rejects(()=>verifyAuthenticationResponse({...args,expectedRPID:'other.example.com'}),'Wrong RP ID must fail');
+const noUVData=Buffer.from(authenticatorData);
+noUVData[32]=0x01; // User present, but user verification absent
+const noUVResponse=structuredClone(response);
+noUVResponse.response.authenticatorData=noUVData.toString('base64url');
+noUVResponse.response.signature=sign('sha256',Buffer.concat([noUVData,createHash('sha256').update(clientDataJSON).digest()]),privateKey).toString('base64url');
+await assert.rejects(()=>verifyAuthenticationResponse({...args,response:noUVResponse}),'Correct signature without user verification must fail');
+const noUPData=Buffer.from(authenticatorData);
+noUPData[32]=0x04; // User verified, but user presence absent
+const noUPResponse=structuredClone(response);
+noUPResponse.response.authenticatorData=noUPData.toString('base64url');
+noUPResponse.response.signature=sign('sha256',Buffer.concat([noUPData,createHash('sha256').update(clientDataJSON).digest()]),privateKey).toString('base64url');
+await assert.rejects(()=>verifyAuthenticationResponse({...args,response:noUPResponse}),'Correct signature without user presence must fail');
 console.log('Signed WebAuthn assertion positive and negative checks passed');
