@@ -61,3 +61,9 @@ test('editing the research question invalidates the previous council report',()=
  assert.match(html,/chatText\('chatQuestion'\)\.addEventListener\('input'/);
  assert.match(html,/Question changed\. Build a new council review/);
 });
+
+test('editing any model response invalidates a previously generated council report',()=>{
+ assert.match(html,/for\(const seat of \['chatGpt','chatGemini','chatLlama'\]\)/);
+ assert.match(html,/A council response changed\. Rebuild the review before copying/);
+ assert.match(html,/Build a complete council review before copying/);
+});
