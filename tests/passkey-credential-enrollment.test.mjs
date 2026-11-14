@@ -12,14 +12,14 @@ test('credential enrollment defaults disabled and requires both verifications',a
  assert.equal(await store.insertVerifiedCredential({...input,publicKey:'invalid'}),false);
  assert.equal(calls,0);
 });
-test('verified insert uses parameters and prevents credential overwrite',async()=>{
+test('even verified-looking caller claims cannot enable credential enrollment',async()=>{
  let calls=0;
  const store=makePasskeyCredentialStore({enabled:true,pool:{query:async(sql,args)=>{
   calls++;assert.match(sql,/ON CONFLICT \(credential_id\) DO NOTHING/);
   assert.deepEqual(args.slice(0,2),['cred','owner']);return {rowCount:1};
  }}});
- assert.equal(await store.insertVerifiedCredential(input),true);
- assert.equal(calls,1);
+ assert.equal(await store.insertVerifiedCredential(input),false);
+ assert.equal(calls,0);
 });
 test('duplicate credential and database failure deny enrollment',async()=>{
  const duplicate=makePasskeyCredentialStore({enabled:true,pool:{query:async()=>({rowCount:0})}});
