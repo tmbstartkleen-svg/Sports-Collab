@@ -13,4 +13,7 @@ test('rejects insecure or unrelated database endpoints',()=>{
 });
 test('accepts correctly shaped server-only connection configuration without connecting',()=>{
  assert.deepEqual(validateSupabaseServerConfig(base),{ok:true,projectId:SPORTS_COLLAB_SUPABASE_PROJECT_ID});
+ assert.equal(validateSupabaseServerConfig({...base,SUPABASE_DATABASE_URL:'postgresql://user:pass@db.otherproject.supabase.co/postgres?sslmode=verify-full'}).ok,false);
+ assert.equal(validateSupabaseServerConfig({...base,SUPABASE_DATABASE_URL:'postgresql://postgres.otherproject:pass@aws-0-us-east-1.pooler.supabase.com/postgres?sslmode=verify-full'}).ok,false);
+ assert.equal(validateSupabaseServerConfig({...base,SUPABASE_DATABASE_URL:'postgresql://postgres.fsfiuekomakdwfdazyte:pass@aws-0-us-east-1.pooler.supabase.com/postgres?sslmode=verify-full'}).ok,true);
 });
