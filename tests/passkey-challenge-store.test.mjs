@@ -55,3 +55,22 @@ test('concurrent challenge consumption permits exactly one winner',async()=>{
  })));
  assert.equal(results.filter(Boolean).length,1);
 });
+
+test('authentication-specific consume rejects unknown and replayed challenges',async()=>{
+ const hashes=new Map();
+ const pool={async query(sql,args){
+  if(sql.startsWith('INSERT')){hashes.set(args[0],{owner:args[1],purpose:args[2],used:false});return {rowCount:1}};
+  if(sql.startsWith('UPDATE')){
+   const row=hashes.get(args[0]);
+   if(!row||row.used||row.owner!==args[1]||row.purpose!==args[2])return {rowCount:0};
+   row.used=true;return {rowCount:1};
+  }
+  throw Error('Unexpected query');
+ }};
+ const store=makePasskeyChallengeStore({enabled:true,pool});
+ const issued=await store.issue({ownerId:'owner',purpose:'authentication'});
+ assert.equal(await store.consumeAuthentication({ownerId:'owner',challenge:'X'.repeat(43)}),false);
+ assert.equal(await store.consumeAuthentication({ownerId:'other',challenge:issued.challenge}),false);
+ assert.equal(await store.consumeAuthentication({ownerId:'owner',challenge:issued.challenge}),true);
+ assert.equal(await store.consumeAuthentication({ownerId:'owner',challenge:issued.challenge}),false);
+});
