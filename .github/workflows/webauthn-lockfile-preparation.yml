@@ -1,0 +1,31 @@
+name: Prepare WebAuthn dependency lockfile (review only)
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/webauthn-lockfile-preparation.yml'
+permissions:
+  contents: read
+jobs:
+  prepare-lockfile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Generate registry-verified lockfile without scripts
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Validate clean dependency installation
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Run offline unit tests
+        run: npm test
+      - name: Upload lockfile for manual review
+        uses: actions/upload-artifact@v4
+        with:
+          name: webauthn-package-lock-review
+          path: package-lock.json
+          retention-days: 7
