@@ -39,3 +39,14 @@ test('wrong owner and tampered signature cannot consume challenge',async()=>{
  assert.equal((await coordinator.verifyAndConsume(tampered)).ok,false);
  assert.equal(consumed,0);
 });
+
+test('database BIGINT counter conversion rejects unsafe or malformed values',async()=>{
+ for(const sign_count of ['9007199254740993',9007199254740992,'1.5','-1','not-a-number',null]){
+  let consumed=0;
+  const credentials={async getActiveCredential(){return {owner_id:'owner',public_key,sign_count}},async recordVerifiedAssertion(){return true}};
+  const challenges={async consume(){consumed++;return true}};
+  const coordinator=makeVerifiedAssertionCoordinator({enabled:true,credentials,challenges});
+  assert.equal((await coordinator.verifyAndConsume(signedAssertion())).ok,false);
+  assert.equal(consumed,0);
+ }
+});
