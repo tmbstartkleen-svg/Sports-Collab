@@ -29,3 +29,29 @@ test('invalid purpose and clock fail closed',async()=>{
  assert.equal((await store.issue({ownerId:'owner',purpose:'unknown'})).ok,false);
  assert.equal(calls,0);
 });
+
+test('concurrent challenge consumption permits exactly one winner',async()=>{
+ const rows=new Map();
+ const pool={async query(sql,args){
+  if(sql.startsWith('INSERT')){
+   rows.set(args[0],{owner:args[1],purpose:args[2],used:false});
+   return {rowCount:1};
+  }
+  if(sql.startsWith('UPDATE')){
+   // Simulates PostgreSQL atomic UPDATE ... WHERE consumed_at IS NULL.
+   const row=rows.get(args[0]);
+   if(!row||row.owner!==args[1]||row.purpose!==args[2]||row.used)return {rowCount:0};
+   row.used=true;
+   await Promise.resolve();
+   return {rowCount:1};
+  }
+  throw Error('Unexpected query');
+ }};
+ const store=makePasskeyChallengeStore({pool,enabled:true});
+ const issued=await store.issue({ownerId:'owner',purpose:'authentication'});
+ assert.equal(issued.ok,true);
+ const results=await Promise.all(Array.from({length:20},()=>store.consume({
+  ownerId:'owner',purpose:'authentication',challenge:issued.challenge
+ })));
+ assert.equal(results.filter(Boolean).length,1);
+});
