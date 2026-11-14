@@ -49,3 +49,15 @@ test('session verification requires an active credential joined to its owner',as
  assert.match(sql[0],/c\.revoked_at IS NULL/);
  assert.match(sql[0],/c\.owner_id=s\.owner_id/);
 });
+
+test('session issuance SQL requires active credential belonging to the owner',async()=>{
+ const statements=[];
+ const store=makeOwnerSessionStore({enabled:true,pool:{async query(sql){statements.push(sql);return {rowCount:0}}}});
+ const result=await store.createVerifiedSession({verifiedOwnerId:'owner',credentialId:'revoked'});
+ assert.equal(result.ok,false);
+ assert.equal(statements.length,1);
+ assert.match(statements[0],/FROM council_owner_credentials c/);
+ assert.match(statements[0],/c\.owner_id=\$2/);
+ assert.match(statements[0],/c\.credential_id=\$3/);
+ assert.match(statements[0],/c\.revoked_at IS NULL/);
+});
