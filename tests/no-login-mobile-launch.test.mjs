@@ -10,7 +10,7 @@ test('no-login mobile launch exposes the council without authentication UI',()=>
  for(const id of ['chatAsk','chatGpt','chatGemini','chatLlama','chatReview','chatResult','saveResearch','loadResearch','clearResearch']){
   assert.match(html,new RegExp('id="'+id+'"'));
  }
- assert.match(html,/No login is required/);
+ assert.match(html,/No sign-in required/);
  assert.doesNotMatch(html,/<input[^>]+type=["']password["']/i);
  assert.match(manifest.description,/No-login/);
 });
