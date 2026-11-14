@@ -60,3 +60,22 @@ test('zero budget rejects any positive request',async()=>{
  assert.equal((await adapter.reserveAtomic({requestId:'zero',estimatedUsd:0.01})).reserved,false);
  assert.equal(state.reserved,0);
 });
+
+test('decimal conversion reserves seven cents for 0.07, not eight',async()=>{
+ const {pool,state}=fakePool({limit:7});
+ const adapter=makeDurableBudgetAdapter({pool,enabled:true,monthKey:'2026-11'});
+ assert.equal((await adapter.reserveAtomic({requestId:'seven',estimatedUsd:0.07})).reserved,true);
+ assert.equal(state.reserved,7);
+});
+test('fractional cents are rounded upward and cannot bypass the cap',async()=>{
+ const {pool,state}=fakePool({limit:1});
+ const adapter=makeDurableBudgetAdapter({pool,enabled:true,monthKey:'2026-11'});
+ assert.equal((await adapter.reserveAtomic({requestId:'fraction',estimatedUsd:0.011})).reserved,false);
+ assert.equal(state.reserved,0);
+});
+test('scientific notation cannot bypass quota validation',async()=>{
+ const {pool,state}=fakePool({limit:100});
+ const adapter=makeDurableBudgetAdapter({pool,enabled:true,monthKey:'2026-11'});
+ assert.equal((await adapter.reserveAtomic({requestId:'tiny',estimatedUsd:1e-7})).reserved,false);
+ assert.equal(state.queries.length,0);
+});
