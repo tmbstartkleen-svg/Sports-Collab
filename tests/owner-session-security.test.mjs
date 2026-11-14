@@ -39,3 +39,14 @@ test('session cookie requires secure httpOnly host-only settings',()=>{
   }
   assert.throws(()=>sessionCookie(makeOpaqueToken(),{secure:false}));
 });
+
+test('forged owner claims cannot bypass the disabled owner guard',async()=>{
+ const {authorizeOwnerRequest,requireOwner}=await import('../lib/owner-guard.js');
+ const forged={headers:{authorization:'Bearer forged',cookie:'__Host-sports_owner=forged','x-owner-id':'owner'},user:{id:'owner'}};
+ assert.equal(authorizeOwnerRequest(forged,{identityVerified:true,sessionStore:{}}).ok,false);
+ let invoked=false;
+ const guarded=requireOwner(async()=>{invoked=true});
+ const res=response();await guarded(forged,res);
+ assert.equal(invoked,false);assert.equal(res.code,401);
+ assert.equal(res.headers['cache-control'],'no-store');
+});
