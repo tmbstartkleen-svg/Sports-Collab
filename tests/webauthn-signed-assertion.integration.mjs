@@ -82,6 +82,7 @@ await assert.rejects(()=>verifyAuthenticationResponse({...args,response:noUPResp
 // genuine signature verification, and atomic counter update. Not a live login.
 const stored=await credentialStore.getOwnerCredential({ownerId:'owner',credentialId:credentialID});
 assert.equal(stored.owner_id,'owner');
+assert.equal(await challengeStore.consumeAuthentication({ownerId:'other-owner',challenge}),false);
 assert.equal(await challengeStore.consumeAuthentication({ownerId:'owner',challenge}),true);
 const verified=await verifyAuthenticationResponse({...args,credential:{
  id:stored.credential_id,publicKey:new Uint8Array(stored.public_key),
@@ -93,6 +94,7 @@ assert.equal(await credentialStore.recordVerifiedAssertion({
  nextSignCount:verified.authenticationInfo.newCounter
 }),true);
 assert.equal(storedCounter,2);
+assert.equal(await credentialStore.getOwnerCredential({ownerId:'other-owner',credentialId:credentialID}).then(row=>row?.owner_id==='other-owner'),false);
 assert.equal(await challengeStore.consumeAuthentication({ownerId:'owner',challenge}),false);
 assert.equal(await credentialStore.recordVerifiedAssertion({
  credentialId:credentialID,ownerId:'owner',previousSignCount:1,nextSignCount:2
