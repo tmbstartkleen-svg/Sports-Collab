@@ -39,3 +39,13 @@ test('invalid session clock fails closed before querying database',async()=>{
  assert.equal(result.ok,false);
  assert.equal(calls,0);
 });
+
+test('session verification requires an active credential joined to its owner',async()=>{
+ const sql=[];
+ const store=makeOwnerSessionStore({enabled:true,pool:{async query(query){sql.push(query);return {rows:[]}}}});
+ assert.equal((await store.verifySession('x'.repeat(40))).ok,false);
+ assert.equal(sql.length,1);
+ assert.match(sql[0],/JOIN council_owner_credentials/);
+ assert.match(sql[0],/c\.revoked_at IS NULL/);
+ assert.match(sql[0],/c\.owner_id=s\.owner_id/);
+});
