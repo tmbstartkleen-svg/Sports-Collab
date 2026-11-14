@@ -92,3 +92,12 @@ test('authentication challenge consumer works when method is detached',async()=>
  assert.equal(await consumeAuthentication({ownerId:'owner',challenge:issued.challenge}),true);
  assert.equal(await consumeAuthentication({ownerId:'owner',challenge:issued.challenge}),false);
 });
+
+test('malformed challenge encodings fail before database access',async()=>{
+ let calls=0;
+ const store=makePasskeyChallengeStore({enabled:true,pool:{query:async()=>{calls++;return {rowCount:1}}}});
+ for(const challenge of ['','short','a'.repeat(42),'a'.repeat(44),'a'.repeat(42)+'=','a'.repeat(42)+'+','a'.repeat(42)+'/','a'.repeat(43)+'\\n']){
+  assert.equal(await store.consumeAuthentication({ownerId:'owner',challenge}),false,challenge);
+ }
+ assert.equal(calls,0);
+});
