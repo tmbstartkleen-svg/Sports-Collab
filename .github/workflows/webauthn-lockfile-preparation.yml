@@ -21,6 +21,21 @@ jobs:
         run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
       - name: Validate clean dependency installation
         run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Exercise actual SimpleWebAuthn verification exports
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {verifyRegistrationResponse,verifyAuthenticationResponse} from '@simplewebauthn/server';
+          assert.equal(typeof verifyRegistrationResponse,'function');
+          assert.equal(typeof verifyAuthenticationResponse,'function');
+          const invalid = {response:{},expectedChallenge:'test',expectedOrigin:'https://example.com',expectedRPID:'example.com',requireUserVerification:true};
+          for (const verify of [verifyRegistrationResponse,verifyAuthenticationResponse]) {
+            let rejected = false;
+            try { const result = await verify(invalid); rejected = result?.verified !== true; }
+            catch { rejected = true; }
+            assert.equal(rejected,true,'Malformed WebAuthn evidence must not verify');
+          }
+          NODE
       - name: Run offline unit tests
         run: npm test
       - name: Upload lockfile for manual review
