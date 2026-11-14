@@ -74,3 +74,21 @@ test('authentication-specific consume rejects unknown and replayed challenges',a
  assert.equal(await store.consumeAuthentication({ownerId:'owner',challenge:issued.challenge}),true);
  assert.equal(await store.consumeAuthentication({ownerId:'owner',challenge:issued.challenge}),false);
 });
+
+test('authentication challenge consumer works when method is detached',async()=>{
+ const rows=new Map();
+ const pool={async query(sql,args){
+  if(sql.startsWith('INSERT')){rows.set(args[0],{owner:args[1],used:false});return {rowCount:1}};
+  if(sql.startsWith('UPDATE')){
+   const row=rows.get(args[0]);
+   if(!row||row.owner!==args[1]||row.used||args[2]!=='authentication')return {rowCount:0};
+   row.used=true;return {rowCount:1};
+  }
+  throw Error('Unexpected query');
+ }};
+ const store=makePasskeyChallengeStore({enabled:true,pool});
+ const issued=await store.issue({ownerId:'owner',purpose:'authentication'});
+ const {consumeAuthentication}=store;
+ assert.equal(await consumeAuthentication({ownerId:'owner',challenge:issued.challenge}),true);
+ assert.equal(await consumeAuthentication({ownerId:'owner',challenge:issued.challenge}),false);
+});
