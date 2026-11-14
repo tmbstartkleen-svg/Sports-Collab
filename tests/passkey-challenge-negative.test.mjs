@@ -14,7 +14,7 @@ test('challenge issuance fails closed on persistence error',async()=>{
 });
 test('challenge consumption is bound to owner and purpose',async()=>{
  let sql='',args=[];const store=makePasskeyChallengeStore({enabled:true,pool:{query:async(s,a)=>{sql=s;args=a;return {rowCount:0}}}});
- assert.equal(await store.consume({ownerId:'owner',purpose:'authentication',challenge:'x'.repeat(43)}),false);
+ assert.equal(await store.consume({ownerId:'owner',purpose:'authentication',challenge:'A'.repeat(43)}),false);
  assert.match(sql,/owner_id=\$2/);assert.match(sql,/ceremony=\$3/);assert.match(sql,/consumed_at IS NULL/);assert.match(sql,/expires_at>now\(\)/);
  assert.equal(args[1],'owner');assert.equal(args[2],'authentication');
 });
