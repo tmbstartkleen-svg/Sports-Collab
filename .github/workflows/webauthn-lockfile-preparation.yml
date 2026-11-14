@@ -5,6 +5,7 @@ on:
     paths:
       - 'package.json'
       - 'package-lock.json'
+      - 'tests/webauthn-signed-assertion.integration.mjs'
       - '.github/workflows/webauthn-lockfile-preparation.yml'
 permissions:
   contents: read
@@ -36,6 +37,8 @@ jobs:
             assert.equal(rejected,true,'Malformed WebAuthn evidence must not verify');
           }
           NODE
+      - name: Verify locally signed WebAuthn assertion and tampering rejection
+        run: node tests/webauthn-signed-assertion.integration.mjs
       - name: Run offline unit tests
         run: npm test
       - name: Assert dependency lockfile remains unchanged
