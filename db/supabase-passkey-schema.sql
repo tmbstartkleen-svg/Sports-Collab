@@ -25,6 +25,32 @@ create table if not exists passkey_auth.challenges (
 );
 create index if not exists passkey_challenge_expiry on passkey_auth.challenges (expires_at);
 
+-- Pre-issued bootstrap nonces are owner-scoped and can be redeemed once.
+-- Never insert raw nonces: store only SHA-256 hashes generated server-side.
+create table if not exists passkey_auth.bootstrap_nonces (
+  nonce_hash text primary key check (nonce_hash ~ '^[0-9a-f]{64}
+  token_hash text primary key,
+  owner_id text not null,
+  expires_at timestamptz not null,
+  revoked_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create index if not exists passkey_session_expiry on passkey_auth.sessions (expires_at);
+
+-- Prevent anonymous or ordinary signed-in clients from accessing tables.
+revoke all on all tables in schema passkey_auth from public, anon, authenticated;
+-- Application server should use a narrowly scoped PostgreSQL role,
+-- not an exposed service-role key in the browser.
+),
+  owner_id text not null,
+  expires_at timestamptz not null,
+  redeemed_at timestamptz,
+  created_at timestamptz not null default now(),
+  check (expires_at > created_at)
+);
+create index if not exists passkey_bootstrap_nonce_expiry
+  on passkey_auth.bootstrap_nonces (expires_at);
+
 create table if not exists passkey_auth.sessions (
   token_hash text primary key,
   owner_id text not null,
