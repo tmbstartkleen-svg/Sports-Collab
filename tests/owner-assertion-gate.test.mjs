@@ -16,6 +16,8 @@ test('owner assertion remains fail closed for credential mismatch and disabled a
   {...base.response,rawId:'credential-B'},
   {...base.response,type:'not-public-key'},
   {...base.response,id:'credential-B'},
+  {...base.response,rawId:'not+base64url'},
+  {...base.response,rawId:''},
   base.response
  ]){
   const result=await completeOwnerAssertion({...base,response});
