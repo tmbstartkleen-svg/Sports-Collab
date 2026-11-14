@@ -32,3 +32,20 @@ test('zero-counter authenticators are allowed but decreasing counters rejected',
  assert.equal(await store.recordVerifiedAssertion({credentialId:'c',ownerId:'o',previousSignCount:0,nextSignCount:0}),true);
  assert.equal(await store.recordVerifiedAssertion({credentialId:'c',ownerId:'o',previousSignCount:5,nextSignCount:0}),false);
 });
+
+test('concurrent assertion counter updates permit one winner',async()=>{
+ let counter=10;
+ const pool={async query(sql,args){
+  assert.match(sql,/sign_count=\$3 AND revoked_at IS NULL/);
+  if(args[1]!=='owner'||args[2]!==counter)return {rowCount:0};
+  counter=args[3];
+  await Promise.resolve();
+  return {rowCount:1};
+ }};
+ const store=makePasskeyCredentialStore({enabled:true,pool});
+ const outcomes=await Promise.all(Array.from({length:20},()=>store.recordVerifiedAssertion({
+  credentialId:'credential',ownerId:'owner',previousSignCount:10,nextSignCount:11
+ })));
+ assert.equal(outcomes.filter(Boolean).length,1);
+ assert.equal(counter,11);
+});
