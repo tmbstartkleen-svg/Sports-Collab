@@ -1,0 +1,45 @@
+name: Verify locked WebAuthn dependencies
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tests/webauthn-signed-assertion.integration.mjs'
+      - '.github/workflows/webauthn-lockfile-preparation.yml'
+permissions:
+  contents: read
+jobs:
+  prepare-lockfile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: audit/owner-auth-fail-closed
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate clean dependency installation
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Exercise actual SimpleWebAuthn verification exports
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {verifyRegistrationResponse,verifyAuthenticationResponse} from '@simplewebauthn/server';
+          assert.equal(typeof verifyRegistrationResponse,'function');
+          assert.equal(typeof verifyAuthenticationResponse,'function');
+          const invalid = {response:{},expectedChallenge:'test',expectedOrigin:'https://example.com',expectedRPID:'example.com',requireUserVerification:true};
+          for (const verify of [verifyRegistrationResponse,verifyAuthenticationResponse]) {
+            let rejected = false;
+            try { const result = await verify(invalid); rejected = result?.verified !== true; }
+            catch { rejected = true; }
+            assert.equal(rejected,true,'Malformed WebAuthn evidence must not verify');
+          }
+          NODE
+      - name: Verify locally signed WebAuthn assertion and tampering rejection
+        run: node tests/webauthn-signed-assertion.integration.mjs
+      - name: Run offline unit tests
+        run: npm test
+      - name: Assert dependency lockfile remains unchanged
+        run: git diff --exit-code -- package-lock.json
