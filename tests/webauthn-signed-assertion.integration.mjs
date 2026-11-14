@@ -19,7 +19,7 @@ const pool={async query(sql,args){
   row.used=true;return {rowCount:1};
  }
  if(sql.startsWith('SELECT credential_id,owner_id')){
-  return {rows:[{credential_id:credentialID,owner_id:'owner',public_key:Buffer.from(credential.publicKey),sign_count:storedCounter,transports:['internal']}]};
+  return {rows:args[0]===credentialID&&args[1]==='owner'?[{credential_id:credentialID,owner_id:'owner',public_key:Buffer.from(credential.publicKey),sign_count:storedCounter,transports:['internal']}]:[]};
  }
  if(sql.startsWith('UPDATE passkey_auth.credentials SET sign_count=')){
   if(args[0]!==credentialID||args[1]!=='owner'||args[2]!==storedCounter)return {rowCount:0};
@@ -94,7 +94,7 @@ assert.equal(await credentialStore.recordVerifiedAssertion({
  nextSignCount:verified.authenticationInfo.newCounter
 }),true);
 assert.equal(storedCounter,2);
-assert.equal(await credentialStore.getOwnerCredential({ownerId:'other-owner',credentialId:credentialID}).then(row=>row?.owner_id==='other-owner'),false);
+assert.equal(await credentialStore.getOwnerCredential({ownerId:'other-owner',credentialId:credentialID}),null);
 assert.equal(await challengeStore.consumeAuthentication({ownerId:'owner',challenge}),false);
 assert.equal(await credentialStore.recordVerifiedAssertion({
  credentialId:credentialID,ownerId:'owner',previousSignCount:1,nextSignCount:2
