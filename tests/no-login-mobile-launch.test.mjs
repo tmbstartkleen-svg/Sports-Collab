@@ -45,3 +45,14 @@ test('restoring saved research reopens the mobile council without contacting pro
  assert.match(html,/chatText\('chatPromptPanel'\)\.hidden=false/);
  assert.match(html,/chatText\('chatReplies'\)\.hidden=false/);
 });
+
+test('council briefs and demo use real line breaks, not literal slash-n sequences',()=>{
+ const script=html.slice(html.indexOf("chatText('chatAsk').addEventListener"));
+ for(const seat of ['chatPromptGpt','chatPromptGemini','chatPromptLlama']){
+  const line=script.split('\n').find(x=>x.includes("chatText('"+seat+"').textContent="));
+  assert.ok(line,seat+' prompt is generated');
+  assert.match(line,/\\n/,'prompt uses JavaScript newline escapes');
+  assert.doesNotMatch(line,/\\\\n/,'prompt must not render literal backslash-n');
+ }
+ assert.match(html,/white-space:pre-wrap/,'briefs preserve line breaks');
+});
