@@ -49,7 +49,7 @@ test('restoring saved research reopens the mobile council without contacting pro
 test('council briefs and demo use real line breaks, not literal slash-n sequences',()=>{
  const script=html.slice(html.indexOf("chatText('chatAsk').addEventListener"));
  for(const seat of ['chatPromptGpt','chatPromptGemini','chatPromptLlama']){
-  const line=script.split('\n').find(x=>x.includes("chatText('"+seat+"').textContent="));
+  const line=script.match(new RegExp("chatText\\('"+seat+"'\\)\\.textContent=([^;]+);"))?.[1];
   assert.ok(line,seat+' prompt is generated');
   assert.match(line,/\\n/,'prompt uses JavaScript newline escapes');
   assert.doesNotMatch(line,/\\\\n/,'prompt must not render literal backslash-n');
