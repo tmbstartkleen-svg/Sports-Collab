@@ -140,3 +140,15 @@ test('offline council integration shares prior turns without network requests',a
  assert.match(seen[3].prompt,/LLAMA: Mock response 3/);
  assert.equal(result.history.length,4);
 });
+
+test('long council replies are abbreviated transparently before the next model',async()=>{
+ const {nextCouncilTurn}=await import('../lib/council-request.js');
+ const question='Assess a hypothetical game';
+ const result=nextCouncilTurn({question,responses:['A'.repeat(5000),'B'.repeat(5000),'C'.repeat(5000)]});
+ assert.equal(result.ok,true);
+ assert.equal(result.recipient,'openai');
+ assert.equal(result.abbreviated,true);
+ assert.ok(result.prompt.length<=4000);
+ assert.match(result.prompt,/CONTENT OMITTED/);
+ assert.match(result.warning,/omitted content/);
+});
