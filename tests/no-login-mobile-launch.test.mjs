@@ -212,3 +212,14 @@ test('offline council endpoint never accepts GET or exposes live transport',asyn
  assert.equal(payload.monthlySpendLimitUsd,0);
  assert.equal(payload.generatedByAI,false);
 });
+
+test('provider normalizer never silently truncates evidence',async()=>{
+ const {normalizeProviderResponse}=await import('../lib/provider-response.js');
+ const normal=normalizeProviderResponse('llama',{choices:[{message:{content:'Verified mock text'}}]});
+ assert.equal(normal.ok,true);
+ assert.equal(normal.truncated,false);
+ const excessive=normalizeProviderResponse('llama',{choices:[{message:{content:'E'.repeat(6001)}}]});
+ assert.equal(excessive.ok,false);
+ assert.equal(excessive.retryAutomatically,false);
+ assert.match(excessive.error,/exceeds council limit/);
+});
