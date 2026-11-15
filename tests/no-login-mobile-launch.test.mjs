@@ -171,3 +171,18 @@ test('offline council endpoint plans next AI handoff without provider calls',asy
  assert.match(second.payload.prompt,/OPENAI: Initial analysis/);
  assert.equal(invoke({question:'Test',responses:['']}).status,400);
 });
+
+test('public offline endpoint rejects oversized payloads without invoking providers',async()=>{
+ const {default:handler}=await import('../api/council-demo.js');
+ const invoke=body=>{
+  let status=200,payload;
+  const res={setHeader(){},status(code){status=code;return this},json(value){payload=value;return this}};
+  handler({method:'POST',body},res);
+  return {status,payload};
+ };
+ assert.equal(invoke({question:'Q'.repeat(4001),responses:[]}).status,413);
+ assert.equal(invoke({question:'Q',responses:['A'.repeat(6001)]}).status,413);
+ assert.equal(invoke({question:'Q',responses:Array(5).fill('valid')}).status,413);
+ assert.equal(invoke({question:'Q',responses:'not an array'}).status,413);
+ assert.equal(invoke(null).status,400);
+});
