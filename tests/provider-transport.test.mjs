@@ -82,3 +82,17 @@ test('offline council preserves completed stages after later responder failure',
  assert.deepEqual(result.responses,['mock answer 1','mock answer 2']);
  assert.equal(calls,3);
 });
+
+test('provider preflight fails closed until verified free and authorized',async()=>{
+ const {preflightProviderExecution}=await import('../lib/provider-executor.js');
+ const auth={ownerVerified:true,explicitProviderApproval:true};
+ const policy={serverVerifiedFree:true,billingDisabled:true,authenticated:true,requestsRemaining:2,requestBudget:1};
+ assert.equal(preflightProviderExecution({provider:'openai'}).ok,false);
+ assert.equal(preflightProviderExecution({authorization:auth,provider:'openai'}).reason,'free_billing_not_verified');
+ assert.equal(preflightProviderExecution({authorization:auth,policy:{...policy,billingDisabled:false},provider:'openai'}).ok,false);
+ assert.equal(preflightProviderExecution({authorization:auth,policy,provider:'unknown'}).reason,'unknown_provider');
+ assert.equal(preflightProviderExecution({authorization:auth,policy:{...policy,requestsRemaining:0},provider:'openai'}).reason,'free_quota_exhausted');
+ assert.equal(preflightProviderExecution({authorization:auth,policy,provider:'openai'}).requiresAtomicReservation,true);
+ assert.equal(preflightProviderExecution({authorization:auth,policy,provider:'openai'}).transportEnabled,false);
+ assert.equal((await executeProvider({authorization:{...auth,enforcedBudgetAvailable:true}})).ok,false);
+});
