@@ -190,6 +190,7 @@ test('quota reservation cancellation blocks acceptance before and after callback
  const after=await reserveCouncilStepForTesting({...args,signal:later.signal,reserveQuota:async()=>{calls++;later.abort();return {reserved:true,id:'y',provider:'openai',round:1}}});
  assert.equal(after.ok,false);
  assert.equal(after.error,'Council reservation cancelled');
+ assert.equal(after.reservationMayBeConsumed,true);
  assert.equal(after.liveCalls,false);
  assert.equal(calls,1);
 });
