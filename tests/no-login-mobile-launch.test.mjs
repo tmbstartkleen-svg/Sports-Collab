@@ -72,3 +72,30 @@ test('a new research question clears previous AI replies before review',()=>{
  assert.match(html,/for\(const seat of \['chatGpt','chatGemini','chatLlama'\]\)chatText\(seat\)\.value=''/);
  assert.match(html,/New question prepared\. Obtain three fresh model responses before reviewing/);
 });
+
+test('council planner shares each prior response and stops after four stages',async()=>{
+ const {nextCouncilTurn,COUNCIL_SEQUENCE}=await import('../lib/council-request.js');
+ assert.deepEqual(COUNCIL_SEQUENCE,['openai','gemini','llama','openai']);
+ const question='Assess a hypothetical matchup';
+ const first=nextCouncilTurn({question});
+ assert.equal(first.recipient,'openai');
+ const second=nextCouncilTurn({question,responses:['Initial analysis']});
+ assert.equal(second.recipient,'gemini');
+ assert.match(second.prompt,/OPENAI: Initial analysis/);
+ const third=nextCouncilTurn({question,responses:['Initial analysis','Evidence review']});
+ assert.equal(third.recipient,'llama');
+ assert.match(third.prompt,/GEMINI: Evidence review/);
+ const fourth=nextCouncilTurn({question,responses:['Initial analysis','Evidence review','Critical challenge']});
+ assert.equal(fourth.recipient,'openai');
+ assert.match(fourth.prompt,/LLAMA: Critical challenge/);
+ assert.equal(nextCouncilTurn({question,responses:['a','b','c','d']}).complete,true);
+});
+test('future live-call gate denies unverified billing, unauthorized use and exhausted quotas',async()=>{
+ const {checkFreeProviderEligibility}=await import('../lib/council-request.js');
+ const base={provider:'gemini',serverVerifiedFree:true,billingDisabled:true,authenticated:true,requestsRemaining:2,requestBudget:2};
+ assert.equal(checkFreeProviderEligibility({...base,billingDisabled:false}).ok,false);
+ assert.equal(checkFreeProviderEligibility({...base,authenticated:false}).ok,false);
+ assert.equal(checkFreeProviderEligibility({...base,requestsRemaining:0}).ok,false);
+ assert.equal(checkFreeProviderEligibility({...base,requestBudget:0}).ok,false);
+ assert.equal(checkFreeProviderEligibility(base).remainingAfterCall,1);
+});
