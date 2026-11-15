@@ -34,3 +34,14 @@ test('mock transport passes a bounded abort signal and never retries',async()=>{
  assert.equal(calls,1);
  assert.equal(result.retryAutomatically,false);
 });
+
+test('missing explicit model blocks even mock HTTP transport',async()=>{
+ let calls=0;
+ const result=await sendProviderRequestForTesting({
+  provider:'openai',prompt:'test',apiKey:'fake',
+  httpClient:async()=>{calls++;return {ok:true,json:async()=>({})}}
+ });
+ assert.equal(result.ok,false);
+ assert.equal(result.retryAutomatically,false);
+ assert.equal(calls,0);
+});
