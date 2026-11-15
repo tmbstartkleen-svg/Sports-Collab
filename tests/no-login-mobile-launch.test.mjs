@@ -123,3 +123,20 @@ test('council step planner fails closed until trusted server policy is verified'
  assert.match(second.prompt,/OPENAI: First response/);
  assert.equal(planVerifiedCouncilStep({question,responses:['a','b','c','d']}).complete,true);
 });
+
+test('offline council integration shares prior turns without network requests',async()=>{
+ const {simulateCouncilExchange}=await import('../lib/provider-executor.js');
+ const seen=[];
+ const result=await simulateCouncilExchange({question:'Evaluate a hypothetical game',mockResponder:async({recipient,prompt,round})=>{
+  seen.push({recipient,prompt,round});
+  return 'Mock response '+round;
+ }});
+ assert.equal(result.ok,true);
+ assert.equal(result.simulated,true);
+ assert.equal(result.liveCalls,false);
+ assert.deepEqual(seen.map(x=>x.recipient),['openai','gemini','llama','openai']);
+ assert.match(seen[1].prompt,/OPENAI: Mock response 1/);
+ assert.match(seen[2].prompt,/GEMINI: Mock response 2/);
+ assert.match(seen[3].prompt,/LLAMA: Mock response 3/);
+ assert.equal(result.history.length,4);
+});
