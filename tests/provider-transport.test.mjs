@@ -359,3 +359,18 @@ test('reserved council does not invoke responder after reservation callback abor
  assert.equal(replies,0);
  assert.deepEqual(result.responses,[]);
 });
+
+test('reserved council rejects invalid progress callback before reserving quota',async()=>{
+ const {planReservedCouncilSequenceForTesting}=await import('../lib/provider-executor.js');
+ let reservations=0;
+ const result=await planReservedCouncilSequenceForTesting({
+  question:'Analyze sports',onStageComplete:true,
+  policyForProvider:async()=>({}),
+  reserveQuota:async()=>{reservations++;return {reserved:true}},
+  mockResponder:async()=>'Mock response'
+ });
+ assert.equal(result.ok,false);
+ assert.equal(result.error,'Invalid council progress callback');
+ assert.equal(result.liveCalls,false);
+ assert.equal(reservations,0);
+});
