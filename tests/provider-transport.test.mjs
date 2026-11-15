@@ -157,3 +157,19 @@ test('offline council preserves replies if progress callback fails',async()=>{
  assert.equal(result.responses.length,1);
  assert.equal(calls,1);
 });
+
+test('offline council stops after progress callback cancels without extra stages',async()=>{
+ const {simulateCouncilExchange}=await import('../lib/provider-executor.js');
+ const controller=new AbortController();
+ let calls=0;
+ const result=await simulateCouncilExchange({
+  question:'Research sports',signal:controller.signal,
+  mockResponder:async()=>{calls++;return 'Mock reply '+calls},
+  onStageComplete:async()=>controller.abort()
+ });
+ assert.equal(result.ok,false);
+ assert.equal(result.error,'Council exchange cancelled');
+ assert.equal(result.liveCalls,false);
+ assert.equal(calls,1);
+ assert.deepEqual(result.responses,['Mock reply 1']);
+});
