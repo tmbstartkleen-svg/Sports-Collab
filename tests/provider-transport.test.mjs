@@ -248,3 +248,21 @@ test('reserved council stops before quota callback when policy lookup cancels',a
  assert.equal(replies,0);
  assert.deepEqual(result.responses,[]);
 });
+
+test('reserved council rejects reused quota reservation IDs',async()=>{
+ const {planReservedCouncilSequenceForTesting}=await import('../lib/provider-executor.js');
+ const authorization={ownerVerified:true,explicitProviderApproval:true};
+ const policy={serverVerifiedFree:true,billingDisabled:true,authenticated:true,requestsRemaining:4,requestBudget:4};
+ let replies=0;
+ const result=await planReservedCouncilSequenceForTesting({
+  question:'Analyze sports',authorization,policyForProvider:async()=>policy,
+  reserveQuota:async({provider,round})=>({reserved:true,id:'same-reservation',provider,round}),
+  mockResponder:async()=>{replies++;return 'Mock reply'}
+ });
+ assert.equal(result.ok,false);
+ assert.equal(result.error,'Duplicate quota reservation ID');
+ assert.equal(result.liveCalls,false);
+ assert.equal(result.reservations.length,1);
+ assert.equal(result.responses.length,1);
+ assert.equal(replies,1);
+});
