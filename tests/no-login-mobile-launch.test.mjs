@@ -186,3 +186,14 @@ test('public offline endpoint rejects oversized payloads without invoking provid
  assert.equal(invoke({question:'Q',responses:'not an array'}).status,413);
  assert.equal(invoke(null).status,400);
 });
+
+test('provider testing transport refuses oversized output without retry',async()=>{
+ const {sendProviderRequestForTesting}=await import('../lib/provider-executor.js');
+ const result=await sendProviderRequestForTesting({
+  provider:'llama',prompt:'Analyze test matchup',apiKey:'test-only-key',model:'test-model',llamaHost:'groq',
+  httpClient:async()=>({ok:true,status:200,json:async()=>({choices:[{message:{content:'X'.repeat(6001)}}]})})
+ });
+ assert.equal(result.ok,false);
+ assert.equal(result.retryAutomatically,false);
+ assert.match(result.error,/exceeds council limit/);
+});
