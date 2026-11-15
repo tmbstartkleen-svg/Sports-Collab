@@ -45,3 +45,25 @@ test('missing explicit model blocks even mock HTTP transport',async()=>{
  assert.equal(result.retryAutomatically,false);
  assert.equal(calls,0);
 });
+
+test('offline council cancellation stops before contacting mock responder',async()=>{
+ const {simulateCouncilExchange}=await import('../lib/provider-executor.js');
+ const controller=new AbortController();
+ controller.abort();
+ let calls=0;
+ const result=await simulateCouncilExchange({question:'Research games',signal:controller.signal,mockResponder:async()=>{calls++;return 'mock'}});
+ assert.equal(result.ok,false);
+ assert.equal(result.liveCalls,false);
+ assert.equal(calls,0);
+ assert.equal(result.responses.length,0);
+});
+test('offline council cancellation between stages preserves only completed replies',async()=>{
+ const {simulateCouncilExchange}=await import('../lib/provider-executor.js');
+ const controller=new AbortController();
+ let calls=0;
+ const result=await simulateCouncilExchange({question:'Research games',signal:controller.signal,mockResponder:async()=>{calls++;controller.abort();return 'mock'}});
+ assert.equal(result.ok,false);
+ assert.equal(result.liveCalls,false);
+ assert.equal(calls,1);
+ assert.equal(result.responses.length,0);
+});
