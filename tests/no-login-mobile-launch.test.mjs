@@ -67,3 +67,8 @@ test('editing any model response invalidates a previously generated council repo
  assert.match(html,/A council response changed\. Rebuild the review before copying/);
  assert.match(html,/Build a complete council review before copying/);
 });
+
+test('a new research question clears previous AI replies before review',()=>{
+ assert.match(html,/for\(const seat of \['chatGpt','chatGemini','chatLlama'\]\)chatText\(seat\)\.value=''/);
+ assert.match(html,/New question prepared\. Obtain three fresh model responses before reviewing/);
+});
