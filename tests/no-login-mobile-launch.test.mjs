@@ -107,3 +107,19 @@ test('mobile council exposes final synthesis brief and copies it',()=>{
  assert.match(html,/LLAMA CRITICAL REVIEW:/);
  assert.match(html,/chatText\('chatLlama'\)\.addEventListener\('input',refreshCouncilHandoffs\)/);
 });
+
+test('council step planner fails closed until trusted server policy is verified',async()=>{
+ const {planVerifiedCouncilStep}=await import('../lib/council-request.js');
+ const question='Evaluate a hypothetical game';
+ assert.equal(planVerifiedCouncilStep({question}).ok,false);
+ const policy={serverVerifiedFree:true,billingDisabled:true,authenticated:true,requestsRemaining:4,requestBudget:4};
+ assert.equal(planVerifiedCouncilStep({question,serverPolicy:{...policy,billingDisabled:false}}).ok,false);
+ const first=planVerifiedCouncilStep({question,serverPolicy:policy});
+ assert.equal(first.ok,true);
+ assert.equal(first.recipient,'openai');
+ assert.equal(first.authorization,'eligible_for_server_reservation');
+ const second=planVerifiedCouncilStep({question,responses:['First response'],serverPolicy:policy});
+ assert.equal(second.recipient,'gemini');
+ assert.match(second.prompt,/OPENAI: First response/);
+ assert.equal(planVerifiedCouncilStep({question,responses:['a','b','c','d']}).complete,true);
+});
