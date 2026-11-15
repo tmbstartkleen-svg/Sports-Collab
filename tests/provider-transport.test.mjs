@@ -227,3 +227,24 @@ test('reserved offline council halts when a provider quota is denied',async()=>{
  assert.equal(result.reservations.length,1);
  assert.equal(replies,1);
 });
+
+test('reserved council stops before quota callback when policy lookup cancels',async()=>{
+ const {planReservedCouncilSequenceForTesting}=await import('../lib/provider-executor.js');
+ const controller=new AbortController();
+ let reservations=0;
+ let replies=0;
+ const result=await planReservedCouncilSequenceForTesting({
+  question:'Analyze sports',
+  signal:controller.signal,
+  authorization:{ownerVerified:true,explicitProviderApproval:true},
+  policyForProvider:async()=>{controller.abort();return {serverVerifiedFree:true,billingDisabled:true,authenticated:true,requestsRemaining:4,requestBudget:4}},
+  reserveQuota:async()=>{reservations++;return {reserved:true,id:'x',provider:'openai',round:1}},
+  mockResponder:async()=>{replies++;return 'Mock response'}
+ });
+ assert.equal(result.ok,false);
+ assert.equal(result.error,'Council exchange cancelled');
+ assert.equal(result.liveCalls,false);
+ assert.equal(reservations,0);
+ assert.equal(replies,0);
+ assert.deepEqual(result.responses,[]);
+});
