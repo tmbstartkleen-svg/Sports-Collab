@@ -152,3 +152,22 @@ test('long council replies are abbreviated transparently before the next model',
  assert.match(result.prompt,/CONTENT OMITTED/);
  assert.match(result.warning,/omitted content/);
 });
+
+test('offline council endpoint plans next AI handoff without provider calls',async()=>{
+ const {default:handler}=await import('../api/council-demo.js');
+ const invoke=body=>{
+  let status=200,payload;
+  const res={setHeader(){},status(code){status=code;return this},json(value){payload=value;return this}};
+  handler({method:'POST',body},res);
+  return {status,payload};
+ };
+ const first=invoke({question:'Analyze a hypothetical matchup',responses:[]});
+ assert.equal(first.status,200);
+ assert.equal(first.payload.recipient,'openai');
+ assert.equal(first.payload.generatedByAI,false);
+ assert.equal(first.payload.providerRequestsEnabled,false);
+ const second=invoke({question:'Analyze a hypothetical matchup',responses:['Initial analysis']});
+ assert.equal(second.payload.recipient,'gemini');
+ assert.match(second.payload.prompt,/OPENAI: Initial analysis/);
+ assert.equal(invoke({question:'Test',responses:['']}).status,400);
+});
