@@ -19,3 +19,18 @@ test('public execution stays blocked even with forged approvals',async()=>{
  const r=await executeProvider({authorization:{ownerVerified:true,explicitProviderApproval:true,enforcedBudgetAvailable:true}});
  assert.equal(r.ok,false);assert.equal(r.status,503);
 });
+
+test('mock transport passes a bounded abort signal and never retries',async()=>{
+ let calls=0;
+ const result=await sendProviderRequestForTesting({
+  provider:'openai',model:'test-openai-model',prompt:'test',apiKey:'fake',
+  httpClient:async(_url,options)=>{
+   calls++;
+   assert.ok(options.signal instanceof AbortSignal);
+   assert.equal(options.signal.aborted,false);
+   return {ok:false,status:429};
+  }
+ });
+ assert.equal(calls,1);
+ assert.equal(result.retryAutomatically,false);
+});
