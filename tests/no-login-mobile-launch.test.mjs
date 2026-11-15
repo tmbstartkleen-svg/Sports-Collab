@@ -197,3 +197,18 @@ test('provider testing transport refuses oversized output without retry',async()
  assert.equal(result.retryAutomatically,false);
  assert.match(result.error,/exceeds council limit/);
 });
+
+test('offline council endpoint never accepts GET or exposes live transport',async()=>{
+ const {default:handler}=await import('../api/council-demo.js');
+ let status=200,payload;
+ const res={setHeader(){},status(code){status=code;return this},json(value){payload=value;return this}};
+ handler({method:'GET',body:{question:'Test'}},res);
+ assert.equal(status,405);
+ assert.equal(payload.ok,false);
+ status=200;
+ handler({method:'POST',body:{question:'Test',responses:[]}},res);
+ assert.equal(status,200);
+ assert.equal(payload.providerRequestsEnabled,false);
+ assert.equal(payload.monthlySpendLimitUsd,0);
+ assert.equal(payload.generatedByAI,false);
+});
