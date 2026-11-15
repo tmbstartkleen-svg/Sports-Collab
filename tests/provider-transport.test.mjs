@@ -302,3 +302,22 @@ test('reserved council reports cancellation when responder aborts and throws',as
  assert.equal(result.responses.length,0);
  assert.equal(result.reservations.length,1);
 });
+
+test('reserved offline council reports stage progress without live calls',async()=>{
+ const {planReservedCouncilSequenceForTesting}=await import('../lib/provider-executor.js');
+ const authorization={ownerVerified:true,explicitProviderApproval:true};
+ const policy={serverVerifiedFree:true,billingDisabled:true,authenticated:true,requestsRemaining:4,requestBudget:4};
+ const stages=[];
+ const result=await planReservedCouncilSequenceForTesting({
+  question:'Analyze sports',authorization,policyForProvider:async()=>policy,
+  reserveQuota:async({provider,round})=>({reserved:true,id:'reservation-'+round,provider,round}),
+  mockResponder:async({round})=>'Mock response '+round,
+  onStageComplete:async(stage)=>stages.push(stage)
+ });
+ assert.equal(result.ok,true);
+ assert.equal(result.liveCalls,false);
+ assert.equal(stages.length,4);
+ assert.deepEqual(stages.map(stage=>stage.completed),[1,2,3,4]);
+ assert.deepEqual(stages.map(stage=>stage.provider),['openai','gemini','llama','openai']);
+ assert.ok(stages.every(stage=>stage.simulated===true&&stage.total===4));
+});
