@@ -247,3 +247,9 @@ test('mobile offline demo prevents overlapping requests',()=>{
  assert.match(html,/finally\{demoButton\.disabled=false;\}/);
  assert.match(html,/mode:'offline-auto-demo'/);
 });
+
+test('mobile offline demo cancels stalled requests and clears timeout',()=>{
+ assert.match(html,/setTimeout\(\(\)=>controller\.abort\(\),10000\)/);
+ assert.match(html,/signal:controller\.signal/);
+ assert.match(html,/clearTimeout\(timeout\);demoButton\.disabled=false/);
+});
