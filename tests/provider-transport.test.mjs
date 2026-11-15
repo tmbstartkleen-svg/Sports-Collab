@@ -194,3 +194,36 @@ test('quota reservation cancellation blocks acceptance before and after callback
  assert.equal(after.liveCalls,false);
  assert.equal(calls,1);
 });
+
+test('reserved offline council plans all four turns with distinct approvals',async()=>{
+ const {planReservedCouncilSequenceForTesting}=await import('../lib/provider-executor.js');
+ const authorization={ownerVerified:true,explicitProviderApproval:true};
+ const policy={serverVerifiedFree:true,billingDisabled:true,authenticated:true,requestsRemaining:4,requestBudget:4};
+ const providers=[];
+ const result=await planReservedCouncilSequenceForTesting({
+  question:'Analyze sports',authorization,policyForProvider:async()=>policy,
+  reserveQuota:async({provider,round})=>{providers.push(provider);return {reserved:true,id:'r'+round,provider,round}},
+  mockResponder:async({round})=>'Mock response '+round
+ });
+ assert.equal(result.ok,true);
+ assert.equal(result.liveCalls,false);
+ assert.deepEqual(providers,['openai','gemini','llama','openai']);
+ assert.equal(result.reservations.length,4);
+ assert.equal(result.responses.length,4);
+});
+test('reserved offline council halts when a provider quota is denied',async()=>{
+ const {planReservedCouncilSequenceForTesting}=await import('../lib/provider-executor.js');
+ const authorization={ownerVerified:true,explicitProviderApproval:true};
+ const policy={serverVerifiedFree:true,billingDisabled:true,authenticated:true,requestsRemaining:4,requestBudget:4};
+ let replies=0;
+ const result=await planReservedCouncilSequenceForTesting({
+  question:'Analyze sports',authorization,policyForProvider:async()=>policy,
+  reserveQuota:async({provider,round})=>round===2?{reserved:false}:{reserved:true,id:'r'+round,provider,round},
+  mockResponder:async()=>{replies++;return 'Mock reply'}
+ });
+ assert.equal(result.ok,false);
+ assert.equal(result.liveCalls,false);
+ assert.equal(result.responses.length,1);
+ assert.equal(result.reservations.length,1);
+ assert.equal(replies,1);
+});
