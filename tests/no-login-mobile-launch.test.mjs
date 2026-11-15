@@ -239,3 +239,11 @@ test('offline auto-demo executes four simulated stages without provider transpor
  assert.equal(payload.responses.length,4);
  assert.ok(payload.responses.every(reply=>reply.includes('SIMULATED')));
 });
+
+test('mobile offline demo prevents overlapping requests',()=>{
+ assert.match(html,/id="chatAutoDemo"/);
+ assert.match(html,/if\(demoButton\.disabled\)return/);
+ assert.match(html,/demoButton\.disabled=true/);
+ assert.match(html,/finally\{demoButton\.disabled=false;\}/);
+ assert.match(html,/mode:'offline-auto-demo'/);
+});
