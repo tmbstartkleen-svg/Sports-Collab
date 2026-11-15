@@ -67,3 +67,18 @@ test('offline council cancellation between stages preserves only completed repli
  assert.equal(calls,1);
  assert.equal(result.responses.length,0);
 });
+
+test('offline council preserves completed stages after later responder failure',async()=>{
+ const {simulateCouncilExchange}=await import('../lib/provider-executor.js');
+ let calls=0;
+ const result=await simulateCouncilExchange({question:'Research games',mockResponder:async()=>{
+  calls++;
+  if(calls===3)throw new Error('Mock failure');
+  return 'mock answer '+calls;
+ }});
+ assert.equal(result.ok,false);
+ assert.equal(result.liveCalls,false);
+ assert.equal(result.round,3);
+ assert.deepEqual(result.responses,['mock answer 1','mock answer 2']);
+ assert.equal(calls,3);
+});
