@@ -137,3 +137,23 @@ test('reservation acknowledgement cannot be reused for a different provider or r
  assert.equal(valid.round,2);
  assert.equal(valid.transportEnabled,false);
 });
+
+test('offline council emits ordered stage progress without network access',async()=>{
+ const {simulateCouncilExchange}=await import('../lib/provider-executor.js');
+ const progress=[];
+ const result=await simulateCouncilExchange({question:'Research sports',mockResponder:async({round})=>'Mock reply '+round,onStageComplete:async stage=>progress.push(stage)});
+ assert.equal(result.ok,true);
+ assert.equal(result.liveCalls,false);
+ assert.deepEqual(progress.map(x=>x.recipient),['openai','gemini','llama','openai']);
+ assert.deepEqual(progress.map(x=>x.completed),[1,2,3,4]);
+ assert.equal(progress[3].total,4);
+});
+test('offline council preserves replies if progress callback fails',async()=>{
+ const {simulateCouncilExchange}=await import('../lib/provider-executor.js');
+ let calls=0;
+ const result=await simulateCouncilExchange({question:'Research sports',mockResponder:async()=>{calls++;return 'Mock reply '+calls},onStageComplete:()=>{throw new Error('UI disconnected')}});
+ assert.equal(result.ok,false);
+ assert.equal(result.liveCalls,false);
+ assert.equal(result.responses.length,1);
+ assert.equal(calls,1);
+});
