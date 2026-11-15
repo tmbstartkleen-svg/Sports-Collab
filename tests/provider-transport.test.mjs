@@ -173,3 +173,23 @@ test('offline council stops after progress callback cancels without extra stages
  assert.equal(calls,1);
  assert.deepEqual(result.responses,['Mock reply 1']);
 });
+
+test('quota reservation cancellation blocks acceptance before and after callback',async()=>{
+ const {reserveCouncilStepForTesting}=await import('../lib/provider-executor.js');
+ const authorization={ownerVerified:true,explicitProviderApproval:true};
+ const policy={serverVerifiedFree:true,billingDisabled:true,authenticated:true,requestsRemaining:2,requestBudget:2};
+ const controller=new AbortController();
+ controller.abort();
+ let calls=0;
+ const args={question:'Research sports',authorization,policy,signal:controller.signal};
+ const before=await reserveCouncilStepForTesting({...args,reserveQuota:async()=>{calls++;return {reserved:true,id:'x',provider:'openai',round:1}}});
+ assert.equal(before.ok,false);
+ assert.equal(before.error,'Council reservation cancelled');
+ assert.equal(calls,0);
+ const later=new AbortController();
+ const after=await reserveCouncilStepForTesting({...args,signal:later.signal,reserveQuota:async()=>{calls++;later.abort();return {reserved:true,id:'y',provider:'openai',round:1}}});
+ assert.equal(after.ok,false);
+ assert.equal(after.error,'Council reservation cancelled');
+ assert.equal(after.liveCalls,false);
+ assert.equal(calls,1);
+});
