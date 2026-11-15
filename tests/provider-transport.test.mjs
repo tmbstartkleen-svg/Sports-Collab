@@ -119,3 +119,21 @@ test('quota reservation is required before a council step can proceed',async()=>
  assert.equal(blocked.ok,false);
  assert.equal(calls,1);
 });
+
+test('reservation acknowledgement cannot be reused for a different provider or round',async()=>{
+ const {reserveCouncilStepForTesting}=await import('../lib/provider-executor.js');
+ const authorization={ownerVerified:true,explicitProviderApproval:true};
+ const policy={serverVerifiedFree:true,billingDisabled:true,authenticated:true,requestsRemaining:3,requestBudget:3};
+ const args={question:'Analyze games',authorization,policy};
+ for(const wrong of [{reserved:true,id:'r1',provider:'gemini',round:1},{reserved:true,id:'r2',provider:'openai',round:2}]){
+  const result=await reserveCouncilStepForTesting({...args,reserveQuota:async()=>wrong});
+  assert.equal(result.ok,false);
+  assert.equal(result.error,'Quota reservation denied');
+  assert.equal(result.liveCalls,false);
+ }
+ const valid=await reserveCouncilStepForTesting({...args,responses:['Initial GPT analysis'],reserveQuota:async()=>({reserved:true,id:'r3',provider:'gemini',round:2})});
+ assert.equal(valid.ok,true);
+ assert.equal(valid.recipient,'gemini');
+ assert.equal(valid.round,2);
+ assert.equal(valid.transportEnabled,false);
+});
