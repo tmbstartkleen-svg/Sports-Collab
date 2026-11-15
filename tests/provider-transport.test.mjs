@@ -285,3 +285,20 @@ test('reserved council passes cancellation signal to simulated responder',async(
  assert.equal(result.responses.length,0);
  assert.equal(result.reservations.length,1);
 });
+
+test('reserved council reports cancellation when responder aborts and throws',async()=>{
+ const {planReservedCouncilSequenceForTesting}=await import('../lib/provider-executor.js');
+ const controller=new AbortController();
+ const authorization={ownerVerified:true,explicitProviderApproval:true};
+ const policy={serverVerifiedFree:true,billingDisabled:true,authenticated:true,requestsRemaining:4,requestBudget:4};
+ const result=await planReservedCouncilSequenceForTesting({
+  question:'Analyze sports',signal:controller.signal,authorization,policyForProvider:async()=>policy,
+  reserveQuota:async({provider,round})=>({reserved:true,id:'reservation-'+round,provider,round}),
+  mockResponder:async()=>{controller.abort();throw Error('aborted')}
+ });
+ assert.equal(result.ok,false);
+ assert.equal(result.error,'Council exchange cancelled');
+ assert.equal(result.liveCalls,false);
+ assert.equal(result.responses.length,0);
+ assert.equal(result.reservations.length,1);
+});
