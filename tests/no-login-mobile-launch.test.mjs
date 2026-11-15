@@ -223,3 +223,19 @@ test('provider normalizer never silently truncates evidence',async()=>{
  assert.equal(excessive.retryAutomatically,false);
  assert.match(excessive.error,/exceeds council limit/);
 });
+
+test('offline auto-demo executes four simulated stages without provider transport',async()=>{
+ const {default:handler}=await import('../api/council-demo.js');
+ let status=0,payload;
+ const res={setHeader(){},status(code){status=code;return this},json(body){payload=body;return this}};
+ await handler({method:'POST',body:{mode:'offline-auto-demo',question:'Review basketball matchup'}},res);
+ assert.equal(status,200);
+ assert.equal(payload.ok,true);
+ assert.equal(payload.mode,'offline-auto-demo');
+ assert.equal(payload.generatedByAI,false);
+ assert.equal(payload.providerRequestsEnabled,false);
+ assert.equal(payload.liveCalls,false);
+ assert.equal(payload.monthlySpendLimitUsd,0);
+ assert.equal(payload.responses.length,4);
+ assert.ok(payload.responses.every(reply=>reply.includes('SIMULATED')));
+});
