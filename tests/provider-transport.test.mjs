@@ -321,3 +321,24 @@ test('reserved offline council reports stage progress without live calls',async(
  assert.deepEqual(stages.map(stage=>stage.provider),['openai','gemini','llama','openai']);
  assert.ok(stages.every(stage=>stage.simulated===true&&stage.total===4));
 });
+
+test('reserved council stops when progress callback aborts after first stage',async()=>{
+ const {planReservedCouncilSequenceForTesting}=await import('../lib/provider-executor.js');
+ const controller=new AbortController();
+ const authorization={ownerVerified:true,explicitProviderApproval:true};
+ const policy={serverVerifiedFree:true,billingDisabled:true,authenticated:true,requestsRemaining:4,requestBudget:4};
+ let reservations=0;
+ let replies=0;
+ const result=await planReservedCouncilSequenceForTesting({
+  question:'Analyze sports',signal:controller.signal,authorization,policyForProvider:async()=>policy,
+  reserveQuota:async({provider,round})=>{reservations++;return {reserved:true,id:'reservation-'+round,provider,round}},
+  mockResponder:async()=>{replies++;return 'Mock reply'},
+  onStageComplete:async()=>controller.abort()
+ });
+ assert.equal(result.ok,false);
+ assert.equal(result.error,'Council exchange cancelled');
+ assert.equal(result.liveCalls,false);
+ assert.equal(result.responses.length,1);
+ assert.equal(reservations,1);
+ assert.equal(replies,1);
+});
