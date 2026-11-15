@@ -342,3 +342,20 @@ test('reserved council stops when progress callback aborts after first stage',as
  assert.equal(reservations,1);
  assert.equal(replies,1);
 });
+
+test('reserved council does not invoke responder after reservation callback aborts',async()=>{
+ const {planReservedCouncilSequenceForTesting}=await import('../lib/provider-executor.js');
+ const controller=new AbortController();
+ const authorization={ownerVerified:true,explicitProviderApproval:true};
+ const policy={serverVerifiedFree:true,billingDisabled:true,authenticated:true,requestsRemaining:4,requestBudget:4};
+ let replies=0;
+ const result=await planReservedCouncilSequenceForTesting({
+  question:'Analyze sports',signal:controller.signal,authorization,policyForProvider:async()=>policy,
+  reserveQuota:async({provider,round})=>{controller.abort();return {reserved:true,id:'r1',provider,round}},
+  mockResponder:async()=>{replies++;return 'Mock reply'}
+ });
+ assert.equal(result.ok,false);
+ assert.equal(result.liveCalls,false);
+ assert.equal(replies,0);
+ assert.deepEqual(result.responses,[]);
+});
