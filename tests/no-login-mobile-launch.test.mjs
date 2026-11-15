@@ -99,3 +99,11 @@ test('future live-call gate denies unverified billing, unauthorized use and exha
  assert.equal(checkFreeProviderEligibility({...base,requestBudget:0}).ok,false);
  assert.equal(checkFreeProviderEligibility(base).remainingAfterCall,1);
 });
+
+test('mobile council exposes final synthesis brief and copies it',()=>{
+ assert.match(html,/id="chatPromptFinalGpt"/);
+ assert.match(html,/id="copyChatFinalGpt"/);
+ assert.match(html,/\['copyChatFinalGpt','chatPromptFinalGpt'\]/);
+ assert.match(html,/LLAMA CRITICAL REVIEW:/);
+ assert.match(html,/chatText\('chatLlama'\)\.addEventListener\('input',refreshCouncilHandoffs\)/);
+});
