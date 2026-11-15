@@ -109,7 +109,7 @@ test('quota reservation is required before a council step can proceed',async()=>
  const denied=await reserveCouncilStepForTesting({...args,reserveQuota:async()=>{calls++;return {reserved:false}}});
  assert.equal(denied.ok,false);
  assert.equal(calls,1);
- const accepted=await reserveCouncilStepForTesting({...args,reserveQuota:async()=>({reserved:true,id:'test-reservation'})});
+ const accepted=await reserveCouncilStepForTesting({...args,reserveQuota:async()=>({reserved:true,id:'test-reservation',provider:'openai',round:1})});
  assert.equal(accepted.ok,true);
  assert.equal(accepted.recipient,'openai');
  assert.equal(accepted.reservationId,'test-reservation');
