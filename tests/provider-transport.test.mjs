@@ -96,3 +96,26 @@ test('provider preflight fails closed until verified free and authorized',async(
  assert.equal(preflightProviderExecution({authorization:auth,policy,provider:'openai'}).transportEnabled,false);
  assert.equal((await executeProvider({authorization:{...auth,enforcedBudgetAvailable:true}})).ok,false);
 });
+
+test('quota reservation is required before a council step can proceed',async()=>{
+ const {reserveCouncilStepForTesting}=await import('../lib/provider-executor.js');
+ const authorization={ownerVerified:true,explicitProviderApproval:true};
+ const policy={serverVerifiedFree:true,billingDisabled:true,authenticated:true,requestsRemaining:2,requestBudget:2};
+ const args={question:'Analyze tonight games',authorization,policy};
+ let calls=0;
+ const missing=await reserveCouncilStepForTesting(args);
+ assert.equal(missing.ok,false);
+ assert.equal(missing.liveCalls,false);
+ const denied=await reserveCouncilStepForTesting({...args,reserveQuota:async()=>{calls++;return {reserved:false}}});
+ assert.equal(denied.ok,false);
+ assert.equal(calls,1);
+ const accepted=await reserveCouncilStepForTesting({...args,reserveQuota:async()=>({reserved:true,id:'test-reservation'})});
+ assert.equal(accepted.ok,true);
+ assert.equal(accepted.recipient,'openai');
+ assert.equal(accepted.reservationId,'test-reservation');
+ assert.equal(accepted.transportEnabled,false);
+ assert.equal(accepted.liveCalls,false);
+ const blocked=await reserveCouncilStepForTesting({...args,policy:{...policy,requestsRemaining:0},reserveQuota:async()=>{calls++;return {reserved:true,id:'bad'}}});
+ assert.equal(blocked.ok,false);
+ assert.equal(calls,1);
+});
