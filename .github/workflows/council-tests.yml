@@ -24,4 +24,5 @@ jobs:
           node --check lib/council-engine.js
           node --check lib/live-access-policy.js
           node --check lib/provider-registry.js
+          node --check lib/provider-config.js
           node --check test/council.test.js
