@@ -212,3 +212,23 @@ test('provider provisioning checklist never exposes credentials or enables calls
   assert.ok(result.providers.every(provider => !provider.enabled && !provider.verified));
   assert.equal(result.providers.find(provider => provider.id === 'muse').envName, null);
 });
+
+const provisioningHandler = require('../api/council/provisioning');
+test('provisioning endpoint exposes safe checklist on GET only', () => {
+  function call(method) {
+    const result = { statusCode: 200, headers: {} };
+    const res = {
+      setHeader(k, v) { result.headers[k] = v; },
+      status(n) { result.statusCode = n; return this; },
+      json(value) { result.body = value; return this; }
+    };
+    provisioningHandler({ method }, res);
+    return result;
+  }
+  const response = call('GET');
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.body.liveEnabled, false);
+  assert.equal(response.body.spendLimitUsd, 0);
+  assert.equal(response.headers['Cache-Control'], 'no-store');
+  assert.equal(call('POST').statusCode, 405);
+});
