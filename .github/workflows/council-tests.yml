@@ -20,6 +20,7 @@ jobs:
         run: |
           node --check api/council/run.js
           node --check api/council/status.js
+          node --check api/council/provisioning.js
           node --check lib/council-engine.js
           node --check lib/live-access-policy.js
           node --check lib/provider-registry.js
