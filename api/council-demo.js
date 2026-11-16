@@ -6,6 +6,7 @@ export default async function handler(req,res){
  if(req.method!=='POST')return res.status(405).json({ok:false,error:'Method not allowed'});
  const b=req.body;
  if(b&&typeof b==='object'&&!Array.isArray(b)&&b.mode==='offline-auto-demo'){
+  res.setHeader('X-Council-Mode','simulation-only');
   if(typeof b.question!=='string'||b.question.length>4000||!b.question.trim()||Object.keys(b).some(k=>!['mode','question'].includes(k)))
    return res.status(400).json({ok:false,error:'Invalid offline demo request'});
   const result=await simulateCouncilExchange({
