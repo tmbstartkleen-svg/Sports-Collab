@@ -116,3 +116,14 @@ test('provider config rejects live, paid fallback, and wagering flags', () => {
   assert.equal(result.errors.length, 3);
   assert.equal(JSON.stringify(result).includes('sensitive-secret'), false);
 });
+
+const { getAdapters, createDisabledAdapter } = require('../lib/provider-adapters');
+test('provider adapters are disabled and use known IDs only', () => {
+  const adapters = getAdapters();
+  assert.deepEqual(Object.keys(adapters), ['gpt', 'gemini', 'muse']);
+  assert.ok(Object.values(adapters).every(adapter => adapter.enabled === false));
+  assert.throws(() => createDisabledAdapter('unknown'), /unsupported_provider/);
+});
+test('disabled provider adapter refuses generate before network access', async () => {
+  await assert.rejects(getAdapters().gpt.generate('hello'), { code: 'LIVE_AI_DISABLED' });
+});
