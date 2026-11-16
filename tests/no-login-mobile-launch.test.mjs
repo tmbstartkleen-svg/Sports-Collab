@@ -65,7 +65,7 @@ test('editing the research question invalidates the previous council report',()=
 test('editing any model response invalidates a previously generated council report',()=>{
  assert.match(html,/for\(const seat of \['chatGpt','chatGemini','chatLlama'\]\)/);
  assert.match(html,/A council response changed\. Rebuild the review before copying/);
- assert.match(html,/Build a complete council review before copying/);
+ assert.match(html,/Build a council review or run a simulation before copying/);
 });
 
 test('a new research question clears previous AI replies before review',()=>{
