@@ -244,7 +244,7 @@ test('mobile offline demo prevents overlapping requests',()=>{
  assert.match(html,/id="chatAutoDemo"/);
  assert.match(html,/if\(demoButton\.disabled\)return/);
  assert.match(html,/demoButton\.disabled=true/);
- assert.match(html,/finally\{demoButton\.disabled=false;\}/);
+ assert.match(html,/finally\{clearTimeout\(timeout\);demoButton\.disabled=false;\}/);
  assert.match(html,/mode:'offline-auto-demo'/);
 });
 
