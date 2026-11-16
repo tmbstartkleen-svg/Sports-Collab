@@ -156,7 +156,7 @@ test('manual council endpoint returns cross-examination when two responses are s
   assert.equal(result.body.providersCalled, 0);
 });
 test('manual council endpoint never accepts a claimed live mode', async () => {
-  const result = request({
+  const result = await request({
     mode: 'live', question: 'Evaluate sports odds',
     responses: { GPT: 'fake', Gemini: 'fake' }
   });
