@@ -7,7 +7,12 @@ export default async function handler(req,res){
  res.setHeader('X-Council-Mode','offline-only');
  if(req.method!=='POST'){res.setHeader('Allow','POST');return res.status(405).json({ok:false,error:'Method not allowed'});}
  if(req.headers?.['content-type']&& !/^application\/json(?:\s*;|\s*$)/i.test(req.headers['content-type']))return res.status(415).json({ok:false,error:'JSON content type required'});
+ const declaredLength=req.headers?.['content-length'];
+ if(declaredLength!==undefined&&(!/^\d+$/.test(String(declaredLength))||Number(declaredLength)>32768))return res.status(413).json({ok:false,error:'Council request body too large'});
  const b=req.body;
+ if(b!==undefined){let bodySize;try{bodySize=Buffer.byteLength(JSON.stringify(b),'utf8');}catch{return res.status(400).json({ok:false,error:'Invalid JSON request body'});}
+  if(bodySize>32768)return res.status(413).json({ok:false,error:'Council request body too large'});
+ }
  if(b&&typeof b==='object'&&!Array.isArray(b)&&b.mode==='offline-auto-demo'){
   res.setHeader('X-Council-Mode','simulation-only');
   if(typeof b.question!=='string'||b.question.length>4000||!b.question.trim()||Object.keys(b).some(k=>!['mode','question'].includes(k)))
