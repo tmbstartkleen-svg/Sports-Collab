@@ -88,3 +88,14 @@ test('live access policy refuses all providers and spending', () => {
   assert.ok(policy.providers.every(p => p.enabled === false));
   assert.throws(assertLiveAccess, { code: 'LIVE_AI_DISABLED' });
 });
+
+const { getPublicProviderStatus } = require('../lib/provider-registry');
+test('provider registry exposes only disabled public metadata', () => {
+  const providers = getPublicProviderStatus();
+  assert.deepEqual(providers.map(p => p.name), ['GPT', 'Gemini', 'Muse']);
+  assert.ok(providers.every(p => !p.available && !p.authenticated && !p.liveEnabled && !p.freeTierVerified));
+  assert.ok(providers.every(p => !Object.keys(p).some(k => /secret|token|key/i.test(k))));
+});
+test('status endpoint reflects provider registry', () => {
+  assert.deepEqual(statusRequest().body.providers, getPublicProviderStatus());
+});
