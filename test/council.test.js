@@ -249,3 +249,17 @@ test('provider authentication refuses requests without reading credentials', asy
     await assert.rejects(authenticateProvider(id), { code: 'PROVIDER_AUTH_DISABLED' });
   }
 });
+
+const { assessIndependentResponses } = require('../lib/council-coordinator');
+test('coordinator refuses duplicated or prompt-only responses', async () => {
+  const question = 'Best bets today';
+  const prompt = buildCouncilPlan(question).independentPrompt;
+  const duplicate = await coordinateCouncil({ question, responses: { GPT: 'same analysis', Gemini: 'same analysis' } });
+  assert.equal(duplicate.readyForChallenge, false);
+  assert.equal(duplicate.challengePrompt, null);
+  assert.ok(duplicate.responseAssessment.issues.includes('duplicate_responses'));
+  const copied = await coordinateCouncil({ question, responses: { GPT: prompt, Gemini: 'Independent analysis' } });
+  assert.equal(copied.readyForChallenge, false);
+  assert.ok(copied.responseAssessment.issues.includes('prompt_is_not_a_response'));
+  assert.equal(assessIndependentResponses(question, { GPT: 'Only one' }).valid, false);
+});
