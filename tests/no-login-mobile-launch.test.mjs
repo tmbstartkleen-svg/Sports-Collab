@@ -296,3 +296,15 @@ test('offline council API rejects oversized declared request bodies',async()=>{
  assert.equal((await run('invalid')).status,413);
  assert.equal((await run('100')).status,200);
 });
+
+test('offline council enforces actual UTF-8 body size even with misleading length',async()=>{
+ const {default:handler}=await import('../api/council-demo.js');
+ const run=async(body)=>{
+  let status=0;const res={setHeader(){},status(code){status=code;return this},json(){return this}};
+  await handler({method:'POST',headers:{'content-type':'application/json','content-length':'1'},body},res);
+  return status;
+ };
+ assert.equal(await run({question:'a'.repeat(31000)}),413);
+ assert.equal(await run({question:'\u{1F680}'.repeat(8000)}),413);
+ assert.equal(await run({mode:'offline-auto-demo',question:'Review matchup'}),200);
+});
