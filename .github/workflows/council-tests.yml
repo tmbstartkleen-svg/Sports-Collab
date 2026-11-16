@@ -16,7 +16,7 @@ jobs:
           node-version: '22'
       - name: Verify offline council tests
         run: node --test test/council.test.js
-      - name: Syntax check API and UI script
+      - name: Syntax check API and council modules
         run: |
           node --check api/council/run.js
           node --check api/council/status.js
