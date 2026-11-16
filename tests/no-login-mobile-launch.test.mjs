@@ -264,3 +264,21 @@ test('copy report accepts offline simulations without dropping simulation label'
  assert.match(html,/report\.includes\('SIMULATED COUNCIL'\)/);
  assert.match(html,/navigator\.clipboard\.writeText\(report\)/);
 });
+
+test('offline council API requires JSON when content type is supplied',async()=>{
+ const {default:handler}=await import('../api/council-demo.js');
+ const run=async(method,headers)=>{
+  let status=0,payload;const h={};
+  const res={setHeader(k,v){h[k]=v},status(code){status=code;return this},json(body){payload=body;return this}};
+  await handler({method,headers,body:{mode:'offline-auto-demo',question:'Review matchup'}},res);
+  return {status,payload,h};
+ };
+ const rejected=await run('POST',{'content-type':'text/plain'});
+ assert.equal(rejected.status,415);
+ assert.equal(rejected.h['X-Council-Mode'],'offline-only');
+ const accepted=await run('POST',{'content-type':'application/json; charset=utf-8'});
+ assert.equal(accepted.status,200);
+ const method=await run('GET',{});
+ assert.equal(method.status,405);
+ assert.equal(method.h.Allow,'POST');
+});
