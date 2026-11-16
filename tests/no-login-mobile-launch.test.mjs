@@ -282,3 +282,17 @@ test('offline council API requires JSON when content type is supplied',async()=>
  assert.equal(method.status,405);
  assert.equal(method.h.Allow,'POST');
 });
+
+test('offline council API rejects oversized declared request bodies',async()=>{
+ const {default:handler}=await import('../api/council-demo.js');
+ const run=async(length)=>{
+  let status=0,payload;
+  const res={setHeader(){},status(code){status=code;return this},json(body){payload=body;return this}};
+  await handler({method:'POST',headers:{'content-type':'application/json','content-length':length},body:{mode:'offline-auto-demo',question:'Review matchup'}},res);
+  return {status,payload};
+ };
+ assert.equal((await run('30001')).status,413);
+ assert.equal((await run('-1')).status,413);
+ assert.equal((await run('invalid')).status,413);
+ assert.equal((await run('100')).status,200);
+});
