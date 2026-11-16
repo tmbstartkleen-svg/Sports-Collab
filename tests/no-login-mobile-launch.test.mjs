@@ -258,3 +258,9 @@ test('mobile simulation discards results if director changes the question',()=>{
  assert.match(html,/chatText\('chatQuestion'\)\.value\.trim\(\)!==question/);
  assert.match(html,/Previous simulation discarded/);
 });
+
+test('copy report accepts offline simulations without dropping simulation label',()=>{
+ assert.match(html,/report\.includes\('LOCAL COUNCIL REVIEW'\)/);
+ assert.match(html,/report\.includes\('SIMULATED COUNCIL'\)/);
+ assert.match(html,/navigator\.clipboard\.writeText\(report\)/);
+});
