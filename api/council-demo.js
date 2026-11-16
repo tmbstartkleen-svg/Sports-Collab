@@ -3,6 +3,8 @@ import {simulateCouncilExchange} from '../lib/provider-executor.js';
 // Public, offline-only council preview. Never accesses secrets or provider networks.
 export default async function handler(req,res){
  res.setHeader('Cache-Control','no-store');
+ res.setHeader('X-Content-Type-Options','nosniff');
+ res.setHeader('X-Council-Mode','offline-only');
  if(req.method!=='POST')return res.status(405).json({ok:false,error:'Method not allowed'});
  const b=req.body;
  if(b&&typeof b==='object'&&!Array.isArray(b)&&b.mode==='offline-auto-demo'){
