@@ -141,3 +141,26 @@ test('provider configuration never accepts live activation flags', () => {
     assert.equal(result.liveEnabled, false);
   }
 });
+
+test('manual council endpoint returns cross-examination when two responses are supplied', () => {
+  const result = request({
+    mode: 'manual', question: 'Compare these NBA matchup assessments',
+    responses: { GPT: 'Team A injury report needs verification', Gemini: 'Team B odds need a timestamp' }
+  });
+  assert.equal(result.statusCode, 200);
+  assert.equal(result.body.readyForChallenge, true);
+  assert.deepEqual(result.body.available, ['GPT', 'Gemini']);
+  assert.match(result.body.challengePrompt, /Team A injury report/);
+  assert.match(result.body.challengePrompt, /Team B odds/);
+  assert.equal(result.body.verified, false);
+  assert.equal(result.body.providersCalled, 0);
+});
+test('manual council endpoint never accepts a claimed live mode', () => {
+  const result = request({
+    mode: 'live', question: 'Evaluate sports odds',
+    responses: { GPT: 'fake', Gemini: 'fake' }
+  });
+  assert.equal(result.statusCode, 503);
+  assert.equal(result.body.error, 'live_ai_disabled');
+  assert.equal(result.body.spendLimitUsd, 0);
+});
