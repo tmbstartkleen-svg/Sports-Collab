@@ -164,3 +164,22 @@ test('manual council endpoint never accepts a claimed live mode', () => {
   assert.equal(result.body.error, 'live_ai_disabled');
   assert.equal(result.body.spendLimitUsd, 0);
 });
+
+const { coordinateCouncil } = require('../lib/council-coordinator');
+test('coordinator assembles manual exchanges without calling providers', async () => {
+  const result = await coordinateCouncil({
+    question: 'Analyze a matchup', mode: 'manual',
+    responses: { GPT: 'Injury uncertainty', Gemini: 'Odds need checking' }
+  });
+  assert.equal(result.readyForChallenge, true);
+  assert.equal(result.providersCalled, 0);
+  assert.equal(result.communication, 'manual_exchange_only');
+  assert.deepEqual(result.providerIds, ['gpt', 'gemini', 'muse']);
+});
+test('coordinator refuses all live modes and spending', async () => {
+  const result = await coordinateCouncil({ question: 'Analyze a matchup', mode: 'live' });
+  assert.equal(result.allowed, false);
+  assert.equal(result.error, 'live_ai_disabled');
+  assert.equal(result.providersCalled, 0);
+  assert.equal(result.spendLimitUsd, 0);
+});
