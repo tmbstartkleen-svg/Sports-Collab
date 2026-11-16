@@ -232,3 +232,20 @@ test('provisioning endpoint exposes safe checklist on GET only', () => {
   assert.equal(response.headers['Cache-Control'], 'no-store');
   assert.equal(call('POST').statusCode, 405);
 });
+
+const { getAuthenticationReadiness, authenticateProvider } = require('../lib/provider-auth');
+test('authentication readiness remains disabled for every supported adapter', () => {
+  for (const id of ['gpt', 'gemini', 'muse']) {
+    const result = getAuthenticationReadiness(id);
+    assert.equal(result.authenticated, false);
+    assert.equal(result.canConnect, false);
+    assert.equal(result.providerCallsAllowed, 0);
+    assert.equal(result.spendLimitUsd, 0);
+  }
+  assert.throws(() => getAuthenticationReadiness('unknown'), /unsupported_provider/);
+});
+test('provider authentication refuses requests without reading credentials', async () => {
+  for (const id of ['gpt', 'gemini', 'muse']) {
+    await assert.rejects(authenticateProvider(id), { code: 'PROVIDER_AUTH_DISABLED' });
+  }
+});
