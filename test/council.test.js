@@ -99,3 +99,20 @@ test('provider registry exposes only disabled public metadata', () => {
 test('status endpoint reflects provider registry', () => {
   assert.deepEqual(statusRequest().body.providers, getPublicProviderStatus());
 });
+
+const { validateProviderConfiguration } = require('../lib/provider-config');
+test('provider config accepts offline mode without credentials', () => {
+  const result = validateProviderConfiguration({});
+  assert.equal(result.validForOfflineMode, true);
+  assert.equal(result.liveEnabled, false);
+  assert.equal(result.spendLimitUsd, 0);
+});
+test('provider config rejects live, paid fallback, and wagering flags', () => {
+  const result = validateProviderConfiguration({
+    ENABLE_LIVE_AI: 'true', ALLOW_PAID_FALLBACK: '1', ENABLE_AUTO_WAGER: 'true',
+    OPENAI_API_KEY: 'sensitive-secret'
+  });
+  assert.equal(result.validForOfflineMode, false);
+  assert.equal(result.errors.length, 3);
+  assert.equal(JSON.stringify(result).includes('sensitive-secret'), false);
+});
