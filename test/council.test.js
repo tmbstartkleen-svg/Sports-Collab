@@ -290,3 +290,42 @@ test('exchange blocks unverified or invalid input and excessive rounds', () => {
   assert.equal(result.messages.length, 0);
   assert.throws(() => prepareCouncilExchange({ question: 'Test', round: 3 }), /invalid_round/);
 });
+
+const exchangeHandler = require('../api/council/exchange');
+async function exchangeRequest(body, method = 'POST') {
+  const result = { statusCode: 200, headers: {} };
+  const res = {
+    setHeader(k, v) { result.headers[k] = v; },
+    status(n) { result.statusCode = n; return this; },
+    json(value) { result.body = value; return this; }
+  };
+  await exchangeHandler({ method, body }, res);
+  return result;
+}
+test('exchange API allows only POST and manual mode', async () => {
+  assert.equal((await exchangeRequest({}, 'GET')).statusCode, 405);
+  assert.equal((await exchangeRequest({ mode: 'live', question: 'Test' })).statusCode, 400);
+  assert.equal((await exchangeRequest(null)).statusCode, 400);
+});
+test('exchange API returns offline messages for independent answers', async () => {
+  const result = await exchangeRequest({
+    mode: 'manual', round: 1, question: 'Best bets today',
+    responses: { GPT: 'Independent finding A', Gemini: 'Independent finding B' }
+  });
+  assert.equal(result.statusCode, 200);
+  assert.equal(result.body.ready, true);
+  assert.equal(result.body.messages.length, 2);
+  assert.equal(result.body.providersCalled, 0);
+  assert.equal(result.body.spendLimitUsd, 0);
+});
+test('exchange API refuses invalid rounds and duplicated answers', async () => {
+  const badRound = await exchangeRequest({ mode: 'manual', round: 3, question: 'Test' });
+  assert.equal(badRound.statusCode, 400);
+  const duplicate = await exchangeRequest({
+    mode: 'manual', round: 1, question: 'Best bets today',
+    responses: { GPT: 'Same answer', Gemini: 'same  answer' }
+  });
+  assert.equal(duplicate.statusCode, 200);
+  assert.equal(duplicate.body.ready, false);
+  assert.equal(duplicate.body.messages.length, 0);
+});
