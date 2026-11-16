@@ -4,21 +4,21 @@ const test = require('node:test');
 const { buildCouncilPlan, validateQuestion, normalizeResponses } = require('../lib/council-engine');
 const handler = require('../api/council/run');
 
-function request(body, method = 'POST') {
+async function request(body, method = 'POST') {
   const result = { statusCode: 200, headers: {} };
   const res = {
     setHeader(k, v) { result.headers[k] = v; },
     status(n) { result.statusCode = n; return this; },
     json(value) { result.body = value; return this; }
   };
-  handler({ method, body }, res);
+  await handler({ method, body }, res);
   return result;
 }
 
-test('rejects empty and oversized questions', () => {
+test('rejects empty and oversized questions', async () => {
   assert.equal(validateQuestion(' '), false);
   assert.equal(validateQuestion('x'.repeat(4001)), false);
-  assert.equal(request({ question: '' }).statusCode, 400);
+  assert.equal((await request({ question: '' })).statusCode, 400);
 });
 test('offline plan never calls a provider', () => {
   const plan = buildCouncilPlan('Analyze matchup');
@@ -39,18 +39,18 @@ test('unrecognized response keys ignored and inputs bounded', () => {
   assert.equal(values.GPT.length, 12000);
   assert.equal(Object.hasOwn(values, 'Unknown'), false);
 });
-test('API rejects live requests even with valid question', () => {
-  const result = request({ question: 'NBA' });
+test('API rejects live requests even with valid question', async () => {
+  const result = await request({ question: 'NBA' });
   assert.equal(result.statusCode, 503);
   assert.equal(result.body.providersCalled, 0);
 });
-test('API accepts explicit manual mode without network', () => {
-  const result = request({ mode: 'manual', question: 'NBA', responses: { GPT: 'analysis' } });
+test('API accepts explicit manual mode without network', async () => {
+  const result = await request({ mode: 'manual', question: 'NBA', responses: { GPT: 'analysis' } });
   assert.equal(result.statusCode, 200);
   assert.equal(result.body.providersCalled, 0);
   assert.equal(result.body.liveEnabled, false);
 });
-test('API rejects non-POST methods', () => assert.equal(request({}, 'GET').statusCode, 405));
+test('API rejects non-POST methods', async () => assert.equal((await request({}, 'GET')).statusCode, 405));
 
 const statusHandler = require('../api/council/status');
 function statusRequest(method = 'GET') {
@@ -74,8 +74,8 @@ test('status endpoint remains fail-closed and reveals no credentials', () => {
 test('status endpoint rejects non-GET methods', () => {
   assert.equal(statusRequest('POST').statusCode, 405);
 });
-test('manual API rejects oversized input before provider calls', () => {
-  const result = request({ mode: 'manual', question: 'x'.repeat(4001) });
+test('manual API rejects oversized input before provider calls', async () => {
+  const result = await request({ mode: 'manual', question: 'x'.repeat(4001) });
   assert.equal(result.statusCode, 400);
 });
 
@@ -142,8 +142,8 @@ test('provider configuration never accepts live activation flags', () => {
   }
 });
 
-test('manual council endpoint returns cross-examination when two responses are supplied', () => {
-  const result = request({
+test('manual council endpoint returns cross-examination when two responses are supplied', async () => {
+  const result = await request({
     mode: 'manual', question: 'Compare these NBA matchup assessments',
     responses: { GPT: 'Team A injury report needs verification', Gemini: 'Team B odds need a timestamp' }
   });
@@ -155,7 +155,7 @@ test('manual council endpoint returns cross-examination when two responses are s
   assert.equal(result.body.verified, false);
   assert.equal(result.body.providersCalled, 0);
 });
-test('manual council endpoint never accepts a claimed live mode', () => {
+test('manual council endpoint never accepts a claimed live mode', async () => {
   const result = request({
     mode: 'live', question: 'Evaluate sports odds',
     responses: { GPT: 'fake', Gemini: 'fake' }
