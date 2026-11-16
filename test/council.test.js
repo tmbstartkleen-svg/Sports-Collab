@@ -202,3 +202,13 @@ test('provider activation rejects mixed-case and alternative truthy flags', () =
     assert.equal(result.spendLimitUsd, 0);
   }
 });
+
+const { getProvisioningChecklist } = require('../lib/provider-provisioning');
+test('provider provisioning checklist never exposes credentials or enables calls', () => {
+  const result = getProvisioningChecklist();
+  assert.equal(result.liveEnabled, false);
+  assert.equal(result.credentialsMustBeRotated, true);
+  assert.equal(result.spendLimitUsd, 0);
+  assert.ok(result.providers.every(provider => !provider.enabled && !provider.verified));
+  assert.equal(result.providers.find(provider => provider.id === 'muse').envName, null);
+});
