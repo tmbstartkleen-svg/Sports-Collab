@@ -28,6 +28,7 @@ jobs:
           node --check lib/provider-provisioning.js
           node --check lib/provider-auth.js
           node --check lib/council-exchange.js
+          node --check api/council/exchange.js
           node --check lib/provider-adapters.js
           node --check lib/council-coordinator.js
           node --check test/council.test.js
