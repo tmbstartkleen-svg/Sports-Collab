@@ -253,3 +253,8 @@ test('mobile offline demo cancels stalled requests and clears timeout',()=>{
  assert.match(html,/signal:controller\.signal/);
  assert.match(html,/clearTimeout\(timeout\);demoButton\.disabled=false/);
 });
+
+test('mobile simulation discards results if director changes the question',()=>{
+ assert.match(html,/chatText\('chatQuestion'\)\.value\.trim\(\)!==question/);
+ assert.match(html,/Previous simulation discarded/);
+});
