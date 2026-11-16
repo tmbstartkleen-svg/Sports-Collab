@@ -127,3 +127,17 @@ test('provider adapters are disabled and use known IDs only', () => {
 test('disabled provider adapter refuses generate before network access', async () => {
   await assert.rejects(getAdapters().gpt.generate('hello'), { code: 'LIVE_AI_DISABLED' });
 });
+
+test('all three adapters refuse requests even when called concurrently', async () => {
+  const adapters = Object.values(getAdapters());
+  const outcomes = await Promise.allSettled(adapters.map(adapter => adapter.generate('test')));
+  assert.equal(outcomes.length, 3);
+  assert.ok(outcomes.every(outcome => outcome.status === 'rejected' && outcome.reason.code === 'LIVE_AI_DISABLED'));
+});
+test('provider configuration never accepts live activation flags', () => {
+  for (const flag of ['ENABLE_LIVE_AI', 'ALLOW_PAID_FALLBACK', 'ENABLE_AUTO_WAGER']) {
+    const result = validateProviderConfiguration({ [flag]: 'true' });
+    assert.equal(result.validForOfflineMode, false);
+    assert.equal(result.liveEnabled, false);
+  }
+});
