@@ -272,3 +272,21 @@ test('coordinator detects duplicated answers despite case and whitespace changes
   assert.equal(result.readyForChallenge, false);
   assert.ok(result.responseAssessment.issues.includes('duplicate_responses'));
 });
+
+const { prepareCouncilExchange } = require('../lib/council-exchange');
+test('exchange prepares attributed challenges without calling providers', () => {
+  const result = prepareCouncilExchange({
+    question: 'Best bets today', responses: { GPT: 'Evidence A', Gemini: 'Evidence B' }
+  });
+  assert.equal(result.ready, true);
+  assert.equal(result.messages.length, 2);
+  assert.equal(result.providersCalled, 0);
+  assert.equal(result.spendLimitUsd, 0);
+  assert.match(result.messages[0].text, /Other independent positions/);
+});
+test('exchange blocks unverified or invalid input and excessive rounds', () => {
+  const result = prepareCouncilExchange({ question: 'Best bets today', responses: { GPT: 'Same', Gemini: 'same' } });
+  assert.equal(result.ready, false);
+  assert.equal(result.messages.length, 0);
+  assert.throws(() => prepareCouncilExchange({ question: 'Test', round: 3 }), /invalid_round/);
+});
