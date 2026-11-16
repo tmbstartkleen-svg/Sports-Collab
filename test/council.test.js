@@ -183,3 +183,22 @@ test('coordinator refuses all live modes and spending', async () => {
   assert.equal(result.providersCalled, 0);
   assert.equal(result.spendLimitUsd, 0);
 });
+
+const { getEnvironmentVariableNames } = require('../lib/provider-config');
+test('configuration publishes only variable names and never secret values', () => {
+  const names = getEnvironmentVariableNames();
+  assert.ok(names.includes('GEMINI_API_KEY'));
+  assert.ok(names.includes('OPENAI_API_KEY'));
+  assert.ok(names.includes('SAMBANOVA_API_KEY'));
+  assert.ok(names.includes('SUPABASE_URL'));
+  assert.ok(names.includes('SUPABASE_ANON_KEY'));
+  assert.ok(names.every(name => /^[A-Z][A-Z0-9_]+$/.test(name)));
+});
+test('provider activation rejects mixed-case and alternative truthy flags', () => {
+  for (const value of ['TRUE', 'Yes', 'ON', '1']) {
+    const result = validateProviderConfiguration({ ENABLE_LIVE_AI: value });
+    assert.equal(result.validForOfflineMode, false);
+    assert.equal(result.liveEnabled, false);
+    assert.equal(result.spendLimitUsd, 0);
+  }
+});
