@@ -1,8 +1,9 @@
 'use strict';
-const { buildCouncilPlan, validateQuestion, normalizeResponses } = require('../../lib/council-engine');
+const { validateQuestion } = require('../../lib/council-engine');
+const { coordinateCouncil } = require('../../lib/council-coordinator');
 
-// Manual-only research orchestration. No API credentials or provider calls.
-module.exports = function handler(req, res) {
+// Offline-only endpoint. No provider credentials or outbound calls.
+module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Allow', 'POST');
   if (req.method !== 'POST') return res.status(405).json({ error: 'method_not_allowed' });
@@ -11,7 +12,6 @@ module.exports = function handler(req, res) {
       !validateQuestion(body.question)) {
     return res.status(400).json({ error: 'invalid_question', maxCharacters: 4000 });
   }
-  // Explicit manual mode required to prevent clients mistaking this for a live model call.
   if (body.mode !== 'manual') {
     return res.status(503).json({
       error: 'live_ai_disabled',
@@ -20,7 +20,9 @@ module.exports = function handler(req, res) {
     });
   }
   try {
-    const plan = buildCouncilPlan(body.question, normalizeResponses(body.responses));
+    const plan = await coordinateCouncil({
+      mode: 'manual', question: body.question, responses: body.responses
+    });
     return res.status(200).json(plan);
   } catch (_) {
     return res.status(400).json({ error: 'invalid_request' });
