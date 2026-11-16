@@ -1,0 +1,24 @@
+name: Council offline tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify offline council tests
+        run: node --test test/council.test.js
+      - name: Syntax check API and UI script
+        run: |
+          node --check api/council/run.js
+          node --check api/council/status.js
+          node --check lib/council-engine.js
