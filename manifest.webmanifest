@@ -1,10 +1,10 @@
 {
-  "name": "Triple AI Sports Council",
-  "short_name": "Sports Council",
+  "name": "Sports-Collab — Three-AI Council",
+  "short_name": "Sports-Collab",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#0b1220",
   "theme_color": "#101827",
-  "description": "Owner-controlled, read-only sports research council"
+  "description": "No-login, read-only, manual three-AI sports research workspace"
 }
