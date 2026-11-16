@@ -78,3 +78,13 @@ test('manual API rejects oversized input before provider calls', () => {
   const result = request({ mode: 'manual', question: 'x'.repeat(4001) });
   assert.equal(result.statusCode, 400);
 });
+
+const { evaluateLiveAccess, assertLiveAccess } = require('../lib/live-access-policy');
+test('live access policy refuses all providers and spending', () => {
+  const policy = evaluateLiveAccess();
+  assert.equal(policy.allowed, false);
+  assert.equal(policy.spendLimitUsd, 0);
+  assert.equal(policy.providerCallsAllowed, 0);
+  assert.ok(policy.providers.every(p => p.enabled === false));
+  assert.throws(assertLiveAccess, { code: 'LIVE_AI_DISABLED' });
+});
