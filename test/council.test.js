@@ -263,3 +263,12 @@ test('coordinator refuses duplicated or prompt-only responses', async () => {
   assert.ok(copied.responseAssessment.issues.includes('prompt_is_not_a_response'));
   assert.equal(assessIndependentResponses(question, { GPT: 'Only one' }).valid, false);
 });
+
+test('coordinator detects duplicated answers despite case and whitespace changes', async () => {
+  const result = await coordinateCouncil({
+    question: 'Best bets today',
+    responses: { GPT: 'Same   ANALYSIS', Gemini: 'same analysis' }
+  });
+  assert.equal(result.readyForChallenge, false);
+  assert.ok(result.responseAssessment.issues.includes('duplicate_responses'));
+});
