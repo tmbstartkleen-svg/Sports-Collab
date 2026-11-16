@@ -5,7 +5,8 @@ export default async function handler(req,res){
  res.setHeader('Cache-Control','no-store');
  res.setHeader('X-Content-Type-Options','nosniff');
  res.setHeader('X-Council-Mode','offline-only');
- if(req.method!=='POST')return res.status(405).json({ok:false,error:'Method not allowed'});
+ if(req.method!=='POST'){res.setHeader('Allow','POST');return res.status(405).json({ok:false,error:'Method not allowed'});}
+ if(req.headers?.['content-type']&& !/^application\/json(?:\s*;|\s*$)/i.test(req.headers['content-type']))return res.status(415).json({ok:false,error:'JSON content type required'});
  const b=req.body;
  if(b&&typeof b==='object'&&!Array.isArray(b)&&b.mode==='offline-auto-demo'){
   res.setHeader('X-Council-Mode','simulation-only');
