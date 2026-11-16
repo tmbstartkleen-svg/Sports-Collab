@@ -51,3 +51,30 @@ test('API accepts explicit manual mode without network', () => {
   assert.equal(result.body.liveEnabled, false);
 });
 test('API rejects non-POST methods', () => assert.equal(request({}, 'GET').statusCode, 405));
+
+const statusHandler = require('../api/council/status');
+function statusRequest(method = 'GET') {
+  const result = { statusCode: 200, headers: {} };
+  const res = {
+    setHeader(k, v) { result.headers[k] = v; },
+    status(n) { result.statusCode = n; return this; },
+    json(value) { result.body = value; return this; }
+  };
+  statusHandler({ method }, res);
+  return result;
+}
+test('status endpoint remains fail-closed and reveals no credentials', () => {
+  const result = statusRequest();
+  assert.equal(result.statusCode, 200);
+  assert.equal(result.body.liveEnabled, false);
+  assert.equal(result.body.spendLimitUsd, 0);
+  assert.ok(result.body.providers.every(provider => provider.available === false));
+  assert.equal(JSON.stringify(result.body).includes('apiKey'), false);
+});
+test('status endpoint rejects non-GET methods', () => {
+  assert.equal(statusRequest('POST').statusCode, 405);
+});
+test('manual API rejects oversized input before provider calls', () => {
+  const result = request({ mode: 'manual', question: 'x'.repeat(4001) });
+  assert.equal(result.statusCode, 400);
+});
