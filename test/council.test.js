@@ -405,3 +405,21 @@ test('two-model coordinator fails closed before any provider calls', async () =>
   await assert.rejects(runTwoModelCouncil('Who wins tonight?'), { code: 'LIVE_AI_DISABLED' });
   await assert.rejects(runTwoModelCouncil('x'.repeat(4001)), /invalid_prompt/);
 });
+
+test('live council endpoint rejects invalid input and remains disabled', async () => {
+  const handler = require('../api/council/live');
+  const response = { status: 200, body: null };
+  const res = {
+    setHeader() {},
+    status(code) { response.status = code; return this; },
+    json(body) { response.body = body; return this; }
+  };
+  await handler({ method: 'GET' }, res);
+  assert.equal(response.status, 405);
+  await handler({ method: 'POST', body: { question: '' } }, res);
+  assert.equal(response.status, 400);
+  await handler({ method: 'POST', body: { question: 'Analyze a matchup' } }, res);
+  assert.equal(response.status, 503);
+  assert.equal(response.body.providersCalled, 0);
+  assert.equal(response.body.spendLimitUsd, 0);
+});
