@@ -373,3 +373,17 @@ test('GPT and Gemini transport remain disabled with no provider requests', async
   }
   assert.throws(() => getTransportReadiness('muse'), /unsupported_provider/);
 });
+
+const { buildOpenAIRequest, buildGeminiRequest, MAX_OUTPUT_TOKENS } = require('../lib/provider-request-builders');
+test('provider payloads bound generation and do not store OpenAI responses', () => {
+  const gpt = buildOpenAIRequest('Research a matchup', 'gpt-4.1-mini');
+  assert.equal(gpt.store, false);
+  assert.equal(gpt.max_output_tokens, MAX_OUTPUT_TOKENS);
+  const gemini = buildGeminiRequest('Research a matchup');
+  assert.equal(gemini.generationConfig.maxOutputTokens, MAX_OUTPUT_TOKENS);
+});
+test('provider payload builders reject invalid or oversized inputs', () => {
+  assert.throws(() => buildOpenAIRequest(' ', 'gpt-4.1-mini'), /invalid_prompt/);
+  assert.throws(() => buildGeminiRequest('x'.repeat(4001)), /invalid_prompt/);
+  assert.throws(() => buildOpenAIRequest('Test', '../unsafe'), /invalid_model/);
+});
