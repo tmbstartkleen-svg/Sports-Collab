@@ -399,3 +399,9 @@ test('provider response parsers extract model text without network access', () =
   assert.equal(parseResponse('gemini', { candidates: [{ content: { parts: [{ text: 'Gemini result' }] } }] }), 'Gemini result');
   assert.throws(() => parseResponse('gpt', { output: [] }), /provider_empty_response/);
 });
+
+test('two-model coordinator fails closed before any provider calls', async () => {
+  const { runTwoModelCouncil } = require('../lib/two-model-council');
+  await assert.rejects(runTwoModelCouncil('Who wins tonight?'), { code: 'LIVE_AI_DISABLED' });
+  await assert.rejects(runTwoModelCouncil('x'.repeat(4001)), /invalid_prompt/);
+});
