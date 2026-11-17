@@ -392,3 +392,10 @@ test('transport rejects oversized prompts before attempting live access', async 
   await assert.rejects(generateProviderResponse('gpt', 'x'.repeat(4001)), /invalid_prompt/);
   await assert.rejects(generateProviderResponse('gemini', 'Research matchup'), { code: 'LIVE_AI_DISABLED' });
 });
+
+test('provider response parsers extract model text without network access', () => {
+  const { parseResponse } = require('../lib/live-provider-transport');
+  assert.equal(parseResponse('gpt', { output: [{ content: [{ type: 'output_text', text: 'GPT result' }] }] }), 'GPT result');
+  assert.equal(parseResponse('gemini', { candidates: [{ content: { parts: [{ text: 'Gemini result' }] } }] }), 'Gemini result');
+  assert.throws(() => parseResponse('gpt', { output: [] }), /provider_empty_response/);
+});
