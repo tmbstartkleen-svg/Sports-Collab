@@ -30,6 +30,7 @@ jobs:
           node --check lib/council-exchange.js
           node --check lib/muse-identity.js
           node --check lib/live-provider-transport.js
+          node --check lib/two-model-council.js
           node --check lib/provider-request-builders.js
           node --check api/council/muse-status.js
           node --check api/council/exchange.js
