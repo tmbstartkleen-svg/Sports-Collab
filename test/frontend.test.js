@@ -27,3 +27,10 @@ test('provider status, research, challenge and final card actions are wired', ()
   assert.ok(script[1].includes("fetch('/api/council/run'"));
   assert.ok(script[1].includes("fetch('/api/council/exchange'"));
 });
+
+test('document ends at its closing HTML tag with no leaked script source', () => {
+  assert.match(html, /<\/script><\/body><\/html>\s*$/);
+  assert.equal((html.match(/<\/html>/g) || []).length, 1);
+  assert.equal((html.match(/<script>/g) || []).length, 1);
+  assert.equal((html.match(/<\/script>/g) || []).length, 1);
+});
