@@ -429,3 +429,8 @@ test('provider request boundary accepts exactly 4000 characters', () => {
   assert.equal(validatePrompt('x'.repeat(4000)).length, 4000);
   assert.throws(() => validatePrompt('x'.repeat(4001)), /invalid_prompt/);
 });
+
+test('two-model coordinator rejects maximum-length question without calling providers', async () => {
+  const { runTwoModelCouncil } = require('../lib/two-model-council');
+  await assert.rejects(runTwoModelCouncil('x'.repeat(4000)), { code: 'LIVE_AI_DISABLED' });
+});
