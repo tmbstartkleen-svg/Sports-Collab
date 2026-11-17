@@ -343,3 +343,21 @@ test('Even verified official Muse identity cannot enable calls without approval'
   assert.equal(result.canCall, false);
   assert.equal(result.spendLimitUsd, 0);
 });
+
+const museStatusHandler = require('../api/council/muse-status');
+test('Muse status endpoint reveals no credentials and stays disabled', () => {
+  const response = { code: 200, body: null, headers: {} };
+  const res = {
+    setHeader(k,v) { response.headers[k] = v; },
+    status(n) { response.code = n; return this; },
+    json(value) { response.body = value; return this; }
+  };
+  museStatusHandler({ method: 'GET' }, res);
+  assert.equal(response.code, 200);
+  assert.equal(response.body.identityVerified, false);
+  assert.equal(response.body.canCall, false);
+  assert.equal(response.body.spendLimitUsd, 0);
+  assert.equal(JSON.stringify(response.body).includes('LLAMA_API_KEY'), false);
+  museStatusHandler({ method: 'POST' }, res);
+  assert.equal(response.code, 405);
+});
