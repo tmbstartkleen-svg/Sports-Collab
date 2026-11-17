@@ -15,7 +15,7 @@ jobs:
         with:
           node-version: '22'
       - name: Verify offline council tests
-        run: node --test test/council.test.js
+        run: node --test test/*.test.js
       - name: Syntax check API and council modules
         run: |
           node --check api/council/run.js
@@ -38,3 +38,4 @@ jobs:
           node --check lib/provider-adapters.js
           node --check lib/council-coordinator.js
           node --check test/council.test.js
+          node --check test/frontend.test.js
