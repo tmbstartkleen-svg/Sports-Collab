@@ -329,3 +329,17 @@ test('exchange API refuses invalid rounds and duplicated answers', async () => {
   assert.equal(duplicate.body.ready, false);
   assert.equal(duplicate.body.messages.length, 0);
 });
+
+const { assessMuseIdentity } = require('../lib/muse-identity');
+test('Muse does not accept Llama gateway credentials as official identity', () => {
+  const result = assessMuseIdentity({ provider: 'sambanova', credentialName: 'LLAMA_API_KEY', officialApiVerified: true });
+  assert.equal(result.identityVerified, false);
+  assert.equal(result.canCall, false);
+});
+test('Even verified official Muse identity cannot enable calls without approval', () => {
+  const result = assessMuseIdentity({ provider: 'meta', credentialName: 'META_API_KEY', officialApiVerified: true });
+  assert.equal(result.identityVerified, true);
+  assert.equal(result.enabled, false);
+  assert.equal(result.canCall, false);
+  assert.equal(result.spendLimitUsd, 0);
+});
