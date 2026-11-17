@@ -423,3 +423,9 @@ test('live council endpoint rejects invalid input and remains disabled', async (
   assert.equal(response.body.providersCalled, 0);
   assert.equal(response.body.spendLimitUsd, 0);
 });
+
+test('provider request boundary accepts exactly 4000 characters', () => {
+  const { validatePrompt } = require('../lib/provider-request-builders');
+  assert.equal(validatePrompt('x'.repeat(4000)).length, 4000);
+  assert.throws(() => validatePrompt('x'.repeat(4001)), /invalid_prompt/);
+});
