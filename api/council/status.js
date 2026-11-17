@@ -1,5 +1,6 @@
 'use strict';
 const { getPublicProviderStatus } = require('../../lib/provider-registry');
+const { evaluateLiveAccess } = require('../../lib/live-access-policy');
 module.exports = function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Allow', 'GET');
@@ -8,6 +9,8 @@ module.exports = function handler(req, res) {
     liveEnabled: false,
     providers: getPublicProviderStatus(),
     spendLimitUsd: 0,
-    mode: 'offline_manual_only'
+    mode: 'offline_manual_only',
+    activationBlocker: evaluateLiveAccess().reason,
+    nextStep: 'Verify zero-cost provider quotas and obtain explicit activation approval'
   });
 };
