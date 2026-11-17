@@ -361,3 +361,15 @@ test('Muse status endpoint reveals no credentials and stays disabled', () => {
   museStatusHandler({ method: 'POST' }, res);
   assert.equal(response.code, 405);
 });
+
+const { getTransportReadiness, generateProviderResponse } = require('../lib/live-provider-transport');
+test('GPT and Gemini transport remain disabled with no provider requests', async () => {
+  for (const provider of ['gpt', 'gemini']) {
+    const readiness = getTransportReadiness(provider);
+    assert.equal(readiness.enabled, false);
+    assert.equal(readiness.requestsAllowed, 0);
+    assert.equal(readiness.spendLimitUsd, 0);
+    await assert.rejects(generateProviderResponse(provider, 'Research NBA games'), { code: 'LIVE_AI_DISABLED' });
+  }
+  assert.throws(() => getTransportReadiness('muse'), /unsupported_provider/);
+});
