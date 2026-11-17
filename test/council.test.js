@@ -443,3 +443,30 @@ test('status endpoint explains activation blocker without exposing secrets', () 
   assert.equal(result.body.spendLimitUsd, 0);
   assert.equal(JSON.stringify(result.body).includes('OPENAI_API_KEY'), false);
 });
+
+test('end-to-end manual council workflow produces attributed reciprocal challenges', async () => {
+  const question = 'Evaluate a basketball matchup using independently verified sources';
+  const responses = {
+    GPT: 'Injury report has not been verified; do not infer availability.',
+    Gemini: 'Market prices are not timestamped; do not infer a positive edge.'
+  };
+  const plan = await request({ mode: 'manual', question, responses });
+  assert.equal(plan.statusCode, 200);
+  assert.equal(plan.body.readyForChallenge, true);
+  const exchange = await exchangeRequest({ mode: 'manual', round: 1, question, responses });
+  assert.equal(exchange.statusCode, 200);
+  assert.equal(exchange.body.ready, true);
+  assert.equal(exchange.body.messages.length, 2);
+  for (const message of exchange.body.messages) {
+    assert.match(message.text, /Other independent positions/);
+    assert.match(message.text, /Do not place wagers/);
+    assert.ok(['GPT', 'Gemini'].includes(message.recipient));
+  }
+  assert.equal(exchange.body.providersCalled, 0);
+  assert.equal(exchange.body.spendLimitUsd, 0);
+  const live = require('../api/council/live');
+  const response = { statusCode: 200, body: null, setHeader() {}, status(n) { this.statusCode = n; return this; }, json(v) { this.body = v; return this; } };
+  await live({ method: 'POST', body: { question } }, response);
+  assert.equal(response.statusCode, 503);
+  assert.equal(response.body.providersCalled, 0);
+});
