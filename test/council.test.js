@@ -434,3 +434,12 @@ test('two-model coordinator rejects maximum-length question without calling prov
   const { runTwoModelCouncil } = require('../lib/two-model-council');
   await assert.rejects(runTwoModelCouncil('x'.repeat(4000)), { code: 'LIVE_AI_DISABLED' });
 });
+
+test('status endpoint explains activation blocker without exposing secrets', () => {
+  const result = statusRequest();
+  assert.equal(result.statusCode, 200);
+  assert.equal(result.body.activationBlocker, 'live_ai_not_approved');
+  assert.match(result.body.nextStep, /zero-cost provider quotas/);
+  assert.equal(result.body.spendLimitUsd, 0);
+  assert.equal(JSON.stringify(result.body).includes('OPENAI_API_KEY'), false);
+});
