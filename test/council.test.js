@@ -387,3 +387,8 @@ test('provider payload builders reject invalid or oversized inputs', () => {
   assert.throws(() => buildGeminiRequest('x'.repeat(4001)), /invalid_prompt/);
   assert.throws(() => buildOpenAIRequest('Test', '../unsafe'), /invalid_model/);
 });
+
+test('transport rejects oversized prompts before attempting live access', async () => {
+  await assert.rejects(generateProviderResponse('gpt', 'x'.repeat(4001)), /invalid_prompt/);
+  await assert.rejects(generateProviderResponse('gemini', 'Research matchup'), { code: 'LIVE_AI_DISABLED' });
+});
