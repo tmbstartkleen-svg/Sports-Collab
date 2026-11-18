@@ -50,3 +50,31 @@ test('mock credential probes use GET and do not expose keys', async () => {
     else process.env.OPENAI_API_KEY=previous;
   }
 });
+
+test('diagnostics reject unsupported methods before checking credentials', async () => {
+  const res=response();
+  await handler({ method:'POST', headers:{} },res);
+  assert.equal(res.statusCode,405);
+  assert.equal(res.body.error,'method_not_allowed');
+});
+test('Gemini diagnostic uses GET with API key header and redacts credentials', async () => {
+  const previous=process.env.GEMINI_API_KEY;
+  try {
+    process.env.GEMINI_API_KEY='fake-gemini-test-key';
+    let calls=0;
+    const result=await handler.checkProvider('gemini',async (url,options) => {
+      calls++;
+      assert.equal(options.method,'GET');
+      assert.match(url,/generativelanguage.googleapis.com\/v1beta\/models/);
+      assert.equal(options.headers['x-goog-api-key'],'fake-gemini-test-key');
+      return {ok:false,status:403};
+    });
+    assert.equal(calls,1);
+    assert.equal(result.authenticated,false);
+    assert.equal(result.result,'authentication_rejected');
+    assert.equal(JSON.stringify(result).includes('fake-gemini-test-key'),false);
+  } finally {
+    if (previous===undefined) delete process.env.GEMINI_API_KEY;
+    else process.env.GEMINI_API_KEY=previous;
+  }
+});
