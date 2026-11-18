@@ -52,3 +52,11 @@ test('live council button is wired to safe disabled-response handling without re
   assert.ok(script[1].includes("result.research.gemini"));
   assert.match(html, /<label for="m">Muse<\/label>/);
 });
+
+test('Gemini free-tier role debate is separately labeled and wired', () => {
+  assert.match(html, /id="runGemini">Start Gemini free-tier role debate<\/button>/);
+  assert.match(html, /id="geminiTranscript"/);
+  assert.ok(script[1].includes("$('runGemini').onclick="));
+  assert.ok(script[1].includes("fetch('/api/council/gemini-free'"));
+  assert.ok(script[1].includes('ONE MODEL, TWO ROLES'));
+});
