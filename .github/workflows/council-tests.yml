@@ -39,3 +39,6 @@ jobs:
           node --check lib/council-coordinator.js
           node --check test/council.test.js
           node --check test/frontend.test.js
+          node --check api/council/provider-diagnostics.js
+          node --check test/provider-diagnostics.test.js
+          node --check test/orchestration.test.js
