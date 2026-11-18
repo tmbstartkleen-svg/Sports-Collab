@@ -1,6 +1,12 @@
 'use strict';
 // Authentication-only diagnostics. No generation, no keys in responses.
 const { evaluateLiveAccess } = require('../../lib/live-access-policy');
+const { timingSafeEqual } = require('node:crypto');
+function tokenMatches(a,b) {
+  if (typeof a !== 'string' || typeof b !== 'string' || b.length < 32) return false;
+  const left = Buffer.from(a), right = Buffer.from(b);
+  return left.length === right.length && timingSafeEqual(left,right);
+}
 const TARGETS = Object.freeze({
   gpt: { env: 'OPENAI_API_KEY', url: 'https://api.openai.com/v1/models' },
   gemini: { env: 'GEMINI_API_KEY', url: 'https://generativelanguage.googleapis.com/v1beta/models?pageSize=1' }
@@ -30,7 +36,8 @@ async function handler(req, res) {
   res.setHeader('Allow', 'GET');
   if (req.method !== 'GET') return res.status(405).json({ error: 'method_not_allowed' });
   // No publicly callable credential probe. Avoid key-validity oracle and abuse.
-  if (process.env.PROVIDER_DIAGNOSTICS_ENABLED !== 'true')
+  if (process.env.PROVIDER_DIAGNOSTICS_ENABLED !== 'true' ||
+      !tokenMatches(req.headers['x-council-diagnostic-token'], process.env.COUNCIL_DIAGNOSTIC_TOKEN))
     return res.status(403).json({ error: 'diagnostics_disabled', providerCalls: 0, spendLimitUsd: 0 });
   const access = evaluateLiveAccess();
   if (access.allowed) return res.status(409).json({ error: 'diagnostics_require_offline_mode' });
