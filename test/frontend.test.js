@@ -41,3 +41,14 @@ test('Muse remains available in manual council while GPT and Gemini are prioriti
   assert.match(html, /<option value="Muse">Muse<\/option>/);
   assert.match(html, /responses:\{GPT:\$\('o'\)\.value,Gemini:\$\('g'\)\.value,Muse:\$\('m'\)\.value\}/);
 });
+
+test('live council button is wired to safe disabled-response handling without removing Muse', () => {
+  assert.match(html, /<button id="runLive">Run GPT \+ Gemini council<\/button>/);
+  assert.match(html, /<p id="liveResult"[^>]*><\/p>/);
+  assert.ok(script[1].includes("$('runLive').onclick="));
+  assert.ok(script[1].includes("fetch('/api/council/live'"));
+  assert.ok(script[1].includes("result.error==='live_ai_disabled'"));
+  assert.ok(script[1].includes("result.research.gpt"));
+  assert.ok(script[1].includes("result.research.gemini"));
+  assert.match(html, /<label for="m">Muse<\/label>/);
+});
