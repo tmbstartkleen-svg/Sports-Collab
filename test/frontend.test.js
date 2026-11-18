@@ -34,3 +34,10 @@ test('document ends at its closing HTML tag with no leaked script source', () =>
   assert.equal((html.match(/<script>/g) || []).length, 1);
   assert.equal((html.match(/<\/script>/g) || []).length, 1);
 });
+
+test('Muse remains available in manual council while GPT and Gemini are prioritized for future live orchestration', () => {
+  assert.match(html, /<label for="m">Muse<\/label>/);
+  assert.match(html, /<textarea id="m"><\/textarea>/);
+  assert.match(html, /<option value="Muse">Muse<\/option>/);
+  assert.match(html, /responses:\{GPT:\$\('o'\)\.value,Gemini:\$\('g'\)\.value,Muse:\$\('m'\)\.value\}/);
+});
